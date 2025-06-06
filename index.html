@@ -3,54 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人主页</title>
+    <title>国际汽车展(IAA)</title>
     <style>
+        /* 任务1: 设置网页背景色 */
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: 0 auto;
+            background-color: #9CCFFF;
+            margin: 0;
             padding: 20px;
-            color: #333;
+            font-family: Arial, sans-serif;
         }
-        header {
+        
+        /* 任务1: 设置表格属性 */
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto; /* 居中对齐 */
+            border-collapse: collapse; /* 边框线粗细为0 */
+            border-spacing: 0; /* 间距为0 */
+        }
+        
+        td {
+            padding: 0; /* 填充为0 */
+        }
+        
+        /* 任务2: 设置标题样式 */
+        .header {
+            padding: 20px 0;
+            text-align: center; /* 水平居中对齐 */
+        }
+        
+        .header h1 {
+            font-family: "Microsoft YaHei", sans-serif; /* 微软雅黑字体 */
+            font-size: 36px; /* 字号36像素 */
+            color: #0000FF; /* 字体颜色#0000FF */
+            margin: 0;
+        }
+        
+        /* 任务3: 设置图像单元格样式 */
+        .image-cell {
+            text-align: center; /* 水平居中 */
+            vertical-align: middle; /* 垂直居中 */
+            width: 50%;
+            padding: 20px;
+        }
+        
+        /* 任务3: 鼠标经过图像样式 */
+        .rollover-img {
+            width: 400px;
+            height: 200px;
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        
+        /* 任务4: 表单样式 */
+        .form-container {
+            padding: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .submit-btn {
+            background-color: #0000FF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        
+        /* 任务5: 页脚样式 */
+        .footer {
             text-align: center;
-            margin-bottom: 30px;
+            padding: 20px 0;
         }
-        h1 {
-            color: #2c3e50;
-        }
-        section {
-            margin-bottom: 20px;
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+        
+        /* 任务5: 水平线样式 */
+        .divider {
+            height: 2px;
+            width: 1200px;
+            max-width: 100%;
+            background-color: #0000FF;
+            margin: 20px auto;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>王哲颢 / Zhehao Wang</h1>
-        <p>出生年份：2004 / Birthyear: 2004</p>
-    </header>
-
-    <section id="contact">
-        <h2>联系方式 / Contact</h2>
-        <p><a href="mailto:wangzhehao1@stu.scu.edu.cn">wangzhehao1@stu.scu.edu.cn</a></p>
-    </section>
-
-    <section id="education">
-        <h2>教育背景 / Education Background</h2>
-        <h3>四川大学 / Sichuan University</h3>
-        <p>工业工程 / Industrial Engineering</p>
-    </section>
-
-    <footer>
-        <p>© 2025 王哲颢. 保留所有权利.</p>
-    </footer>
+    <!-- 任务1: 表格结构 -->
+    <table>
+        <!-- 任务2: 标题行 -->
+        <tr>
+            <td colspan="2" class="header">
+                <h1>2020法兰克福国际汽车展(IAA)</h1>
+            </td>
+        </tr>
+        
+        <tr>
+            <!-- 任务3: 图像单元格 -->
+            <td class="image-cell">
+                <a href="iaaabout.htm" target="_blank">
+                    <img src="wyimages/logo.png" 
+                         alt="国际汽车展(IAA) Logo" 
+                         class="rollover-img"
+                         onmouseover="this.src='wyimages/bsj02.jpg'"
+                         onmouseout="this.src='wyimages/logo.png'">
+                </a>
+            </td>
+            
+            <!-- 任务4: 表单单元格 -->
+            <td class="form-container">
+                <form action="#" method="post">
+                    <div class="form-group">
+                        <label for="name">姓名：</label>
+                        <input type="text" id="name" name="name"> <!-- 任务4: 文本字段 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>性别：</label>
+                        <div class="radio-group">
+                            <div>
+                                <input type="radio" id="male" name="gender" value="male"> <!-- 任务4: 单选按钮组 -->
+                                <label for="male">男</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="female" name="gender" value="female">
+                                <label for="female">女</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="occupation">职业：</label>
+                        <input type="text" id="occupation" name="occupation"> <!-- 任务4: 文本字段 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="suggestion">您对车展的建议：</label>
+                        <textarea id="suggestion" name="suggestion" rows="4"></textarea> <!-- 任务4: 文本区域 -->
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">提交问卷</button> <!-- 任务4: 提交按钮 -->
+                </form>
+            </td>
+        </tr>
+    </table>
+    
+    <!-- 任务5: 页脚区域 -->
+    <div class="footer">
+        <div class="divider"></div> <!-- 任务5: 水平线 -->
+        <p>&copy; 版权所有 2020 法兰克福国际汽车展(IAA) | 
+            <a href="mailto:wv@shnu.edu.cn">联系我们</a> <!-- 任务5: 邮件链接 -->
+        </p>
+    </div>
 </body>
 </html>
