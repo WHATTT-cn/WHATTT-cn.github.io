@@ -1,67 +1,688 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的个人主页</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            max-width: 800px;
-            margin: : 0 auto;;
-            padding: 20px;
-            color: #333;
-        }
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        h1 {
-            color: #2c3e50;
-        }
-        section {
-            margin-bottom: 20px;
-        }
-        a {
-            color: #3498db;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>海外发薪年度个税申报流程追踪看板</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;width:100%;max-width:100vw;overflow-x:hidden;overflow-y:auto;min-height:100vh}
+:root{
+  --primary:#185DD3;--primary-light:#E8F0FE;--primary-dark:#1248A5;
+  --bg-page:#FFFFFF;--bg-card:#FFFFFF;--bg-panel:#F5F7FA;--bg-section:#EDF1F5;
+  --grey-1:#202D3F;--grey-2:#5A6778;--grey-3:#8C96A5;--grey-4:#D0D5DD;
+  --chart-primary:#185DD3;--chart-secondary:#42A5F5;--chart-tertiary:#00BFA5;
+  --chart-quaternary:#7C4DFF;--chart-success:#34C759;--chart-warning:#FF9500;--chart-danger:#FF3B30;
+  --status-success:#34C759;--status-danger:#FF3B30;--status-warning:#FF9500;--status-neutral:#8C96A5;
+  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:20px;--space-xl:24px;
+  --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--radius-xl:16px;
+  --shadow-card:0 1px 3px rgba(0,0,0,0.04);--shadow-hover:0 4px 12px rgba(0,0,0,0.08);
+  --shadow-active:0 2px 8px rgba(24,93,211,0.15);--shadow-elevated:0 8px 24px rgba(0,0,0,0.10);
+  --shadow-dropdown:0 4px 16px rgba(0,0,0,0.12);
+  --font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Noto Sans SC",sans-serif;
+}
+body{font-family:var(--font-family);background:var(--bg-page);color:var(--grey-1)}
+.dashboard{width:100%;max-width:1680px;margin:0 auto;padding:var(--space-xl);overflow:hidden}
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:12px}
+.header-title{font-size:32px;font-weight:500;color:var(--grey-1);display:flex;align-items:center;gap:12px}
+.header-title .sub{font-size:14px;font-weight:400;color:var(--grey-3)}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filter-dropdown{padding:8px 14px;background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);cursor:pointer;transition:border-color .2s;min-width:130px}
+.filter-dropdown:hover{border-color:var(--primary)}
+.filter-search{padding:8px 14px;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);outline:none;transition:border-color .2s;min-width:200px}
+.filter-search:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,93,211,0.1)}
+.btn-primary{padding:10px 20px;background:var(--primary);color:#FFF;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;transition:background .2s,box-shadow .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary:hover{background:var(--primary-dark);box-shadow:0 2px 8px rgba(24,93,211,0.3)}
+.btn-secondary{padding:8px 14px;background:var(--primary-light);color:var(--primary);border:none;border-radius:var(--radius-md);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s}
+.btn-secondary:hover{background:#D0E2FF}
+.btn-danger{padding:8px 14px;background:#FFF;color:var(--chart-danger);border:1px solid var(--chart-danger);border-radius:var(--radius-md);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-danger:hover{background:#FFF0F0}
+.btn-text{padding:4px 8px;background:none;border:none;color:var(--primary);font-size:13px;cursor:pointer;transition:color .2s}
+.btn-text:hover{color:var(--primary-dark);text-decoration:underline}
+/* MAIN LAYOUT */
+.main-content{display:flex;gap:var(--space-lg);width:100%;flex-wrap:wrap}
+.left-panel{flex:1 1 60%;min-width:0}
+.right-panel{flex:1 1 38%;min-width:0}
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)}
+.metric-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-lg);padding:20px 24px;box-shadow:var(--shadow-card);position:relative;overflow:hidden;transition:box-shadow .2s,border-color .2s,transform .15s}
+.metric-card:hover{box-shadow:var(--shadow-hover);border-color:var(--primary);transform:translateY(-1px)}
+.metric-card::before{content:'';position:absolute;left:0;top:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--chart-secondary));border-radius:12px 12px 0 0}
+.metric-card .mc-label{font-size:16px;font-weight:500;color:var(--grey-2);margin-bottom:8px}
+.metric-card .mc-value{font-size:32px;font-weight:500;color:var(--grey-1)}
+.metric-card .mc-sub{font-size:12px;color:var(--grey-3);margin-top:4px}
+/* CARD/CONTAINER */
+.chart-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-lg);padding:var(--space-lg);box-shadow:var(--shadow-card);margin-bottom:var(--space-md)}
+.section-title{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:500;color:var(--grey-1);margin-bottom:var(--space-md)}
+.section-title .icon{width:20px;height:20px;color:var(--primary);flex-shrink:0}
+.chart-container{width:100%;height:260px;position:relative}
+/* KANBAN */
+.kanban-section{background:var(--bg-panel);border:1px solid var(--bg-section);border-radius:var(--radius-lg);padding:var(--space-lg);margin-bottom:var(--space-md)}
+.kanban-columns{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px}
+.kanban-col{flex:1 1 220px;min-width:180px;max-width:100%}
+.kanban-col-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--grey-1);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--grey-4)}
+.kanban-col-title .count{font-size:12px;color:var(--grey-3);background:var(--bg-panel);padding:2px 8px;border-radius:10px}
+.kanban-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow-card);transition:box-shadow .2s,border-color .2s;cursor:default}
+.kanban-card:hover{box-shadow:var(--shadow-hover);border-color:var(--primary)}
+.kanban-card .kc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
+.kanban-card .kc-title{font-size:14px;font-weight:500;color:var(--grey-1);line-height:1.3}
+.kanban-card .kc-type{font-size:11px;color:var(--grey-3);margin-bottom:4px}
+.kanban-card .kc-meta{display:flex;flex-wrap:wrap;gap:4px;font-size:11px;color:var(--grey-3)}
+.kanban-card .kc-meta span{background:var(--bg-panel);padding:2px 6px;border-radius:4px}
+.kanban-card .kc-actions{display:flex;gap:4px;margin-top:6px;justify-content:flex-end}
+/* PRIORITY BADGE */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.badge-high{background:rgba(255,59,48,0.1);color:var(--chart-danger)}
+.badge-mid{background:rgba(255,149,0,0.1);color:var(--chart-warning)}
+.badge-low{background:rgba(138,150,165,0.1);color:var(--grey-3)}
+.badge-employer{background:rgba(24,93,211,0.1);color:var(--primary)}
+.badge-expat{background:rgba(0,191,165,0.1);color:var(--chart-tertiary)}
+.badge-done{background:rgba(52,199,89,0.1);color:var(--chart-success)}
+.badge-exception{background:rgba(255,59,48,0.1);color:var(--chart-danger)}
+.badge-progress{background:rgba(66,165,245,0.1);color:var(--chart-secondary)}
+.badge-start{background:rgba(138,150,165,0.1);color:var(--grey-2)}
+/* TABLE */
+.data-table{width:100%;border-collapse:separate;border-spacing:0;background:#FFF;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--grey-4)}
+.data-table th{padding:12px 16px;font-size:12px;font-weight:500;color:var(--grey-2);text-align:left;border-bottom:1px solid var(--bg-section);background:var(--bg-panel);letter-spacing:0.02em;cursor:pointer;user-select:none;white-space:nowrap}
+.data-table th:hover{color:var(--primary)}
+.data-table td{padding:10px 14px;font-size:13px;color:var(--grey-1);border-bottom:1px solid var(--bg-section)}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:var(--bg-panel)}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);margin-bottom:var(--space-md)}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(2px)}
+.modal-overlay.active{display:flex}
+.modal{background:#FFF;border-radius:var(--radius-xl);width:min(90%,620px);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-elevated);padding:var(--space-xl)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-lg);padding-bottom:var(--space-md);border-bottom:1px solid var(--bg-section)}
+.modal-header h2{font-size:20px;font-weight:500;color:var(--grey-1);margin:0}
+.modal-close{width:32px;height:32px;border:none;background:var(--bg-panel);border-radius:50%;cursor:pointer;font-size:18px;color:var(--grey-2);display:flex;align-items:center;justify-content:center;transition:background .2s}
+.modal-close:hover{background:var(--grey-4)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)}
+.form-group{margin-bottom:var(--space-md)}
+.form-group.full{grid-column:1/-1}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--grey-2);margin-bottom:6px}
+.form-group label .req{color:var(--chart-danger);margin-left:2px}
+.form-input,.form-select,.form-textarea{padding:10px 14px;background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);transition:border-color .2s,box-shadow .2s;width:100%;font-family:var(--font-family)}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,93,211,0.1)}
+.form-textarea{resize:vertical;min-height:80px}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:var(--space-lg);padding-top:var(--space-md);border-top:1px solid var(--bg-section)}
+/* CONFIRM DIALOG */
+.confirm-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1001;justify-content:center;align-items:center}
+.confirm-overlay.active{display:flex}
+.confirm-box{background:#FFF;border-radius:var(--radius-lg);padding:var(--space-xl);width:min(90%,400px);box-shadow:var(--shadow-elevated)}
+.confirm-box h3{font-size:18px;font-weight:500;color:var(--grey-1);margin:0 0 8px}
+.confirm-box p{font-size:14px;color:var(--grey-2);margin:0 0 var(--space-lg)}
+.confirm-actions{display:flex;justify-content:flex-end;gap:10px}
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--grey-3)}
+.empty-state .icon{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px;margin:0}
+/* RESPONSIVE */
+@media(max-width:1280px){.left-panel{flex:1 1 55%}.right-panel{flex:1 1 42%}}
+@media(max-width:1024px){
+  .main-content{flex-direction:column}
+  .left-panel,.right-panel{flex:1 1 100%}
+  .kanban-columns{flex-wrap:wrap}
+  .kanban-col{flex:1 1 180px}
+}
+@media(max-width:768px){
+  .dashboard{padding:12px}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .header{flex-direction:column;align-items:flex-start}
+  .header-right{width:100%}
+  .filter-bar{width:100%;flex-wrap:wrap}
+  .filter-bar>*{flex:1 1 auto;min-width:0}
+  .filter-search{width:100%;min-width:0}
+  .form-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
-    <header>
-        <h1>王哲颢 / Zhehao Wang</h1>
-        <p>出生年份：2004 / Birthyear: 2004</p>
-    </header>
+<div class="dashboard">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">
+      📋 海外发薪年度个税申报看板
+      <span class="sub">流程追踪</span>
+    </div>
+    <div class="header-right">
+      <div class="filter-bar">
+        <select class="filter-dropdown" id="filterType">
+          <option value="">全部类型</option>
+          <option value="雇主侧申报">雇主侧申报</option>
+          <option value="外派员工年度申报">外派员工年度申报</option>
+        </select>
+        <select class="filter-dropdown" id="filterStage">
+          <option value="">全部环节</option>
+          <option value="待启动">待启动</option>
+          <option value="进行中">进行中</option>
+          <option value="已完成">已完成</option>
+          <option value="异常">异常</option>
+        </select>
+        <select class="filter-dropdown" id="filterPriority">
+          <option value="">全部优先级</option>
+          <option value="高">高</option>
+          <option value="中">中</option>
+          <option value="低">低</option>
+        </select>
+        <input class="filter-search" id="filterSearch" placeholder="🔍 搜索流程标题..." />
+      </div>
+      <button class="btn-primary" onclick="openAddModal()">＋ 新增流程</button>
+    </div>
+  </div>
 
-    <section id="contact">
-        <h2>联系方式 / Contact</h2>
-        <p><a href="mailto:wangzhehao1@stu.scu.edu.cn">wangzhehao1@stu.scu.edu.cn</a></p>
-    </section>
+  <div class="main-content">
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+      <!-- KPI CARDS -->
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="metric-card"><div class="mc-label">📊 总流程数</div><div class="mc-value" id="kpiTotal">0</div><div class="mc-sub">全部申报流程</div></div>
+        <div class="metric-card"><div class="mc-label">🔄 进行中</div><div class="mc-value" id="kpiInProgress" style="color:var(--chart-secondary)">0</div><div class="mc-sub">待核查/复核/提交</div></div>
+        <div class="metric-card"><div class="mc-label">✅ 已完成</div><div class="mc-value" id="kpiCompleted" style="color:var(--chart-success)">0</div><div class="mc-sub">已申报并归档</div></div>
+        <div class="metric-card"><div class="mc-label">⚠️ 异常单</div><div class="mc-value" id="kpiException" style="color:var(--chart-danger)">0</div><div class="mc-sub">需重点关注处理</div></div>
+      </div>
 
-    <section id="education">
-        <h2>教育背景 / Education Background</h2>
-        <h3>四川大学 / Sichuan University</h3>
-        <p>工业工程 / Industrial Engineering</p>
-    </section>
+      <!-- STAGE DISTRIBUTION CHART -->
+      <div class="chart-card">
+        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="10" y1="3" x2="10" y2="17"/></svg>各环节流程数量分布</div>
+        <div class="chart-container"><canvas id="stageChart"></canvas></div>
+      </div>
 
-    <section id="certification">
-        <h2>AWS认证AI从业者</h2>
-        <div 
-            data-iframe-width="150" 
-            data-iframe-height="270" 
-            data-share-badge-id="8deee519-d443-4271-becd-aab8c5f7278d" 
-            data-share-badge-host="https://www.credly.com">
+      <!-- COUNTRY DISTRIBUTION -->
+      <div class="chart-card">
+        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3a15 15 0 010 14"/></svg>申报国家分布</div>
+        <div class="chart-container"><canvas id="countryChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+      <!-- KANBAN -->
+      <div class="kanban-section">
+        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="5" height="14" rx="1"/><rect x="8" y="3" width="5" height="14" rx="1"/><rect x="14" y="3" width="5" height="14" rx="1"/></svg>流程看板</div>
+        <div class="kanban-columns" id="kanbanColumns">
+          <div class="kanban-col" data-stage="待启动">
+            <div class="kanban-col-title" style="border-bottom-color:var(--primary)">📋 待启动/准备中 <span class="count" id="count_待启动">0</span></div>
+            <div class="kanban-cards" id="col_待启动"></div>
+          </div>
+          <div class="kanban-col" data-stage="进行中">
+            <div class="kanban-col-title" style="border-bottom-color:var(--chart-secondary)">⚙️ 进行中 <span class="count" id="count_进行中">0</span></div>
+            <div class="kanban-cards" id="col_进行中"></div>
+          </div>
+          <div class="kanban-col" data-stage="已完成">
+            <div class="kanban-col-title" style="border-bottom-color:var(--chart-success)">✅ 已完成 <span class="count" id="count_已完成">0</span></div>
+            <div class="kanban-cards" id="col_已完成"></div>
+          </div>
+          <div class="kanban-col" data-stage="异常">
+            <div class="kanban-col-title" style="border-bottom-color:var(--chart-danger)">⚠️ 异常 <span class="count" id="count_异常">0</span></div>
+            <div class="kanban-cards" id="col_异常"></div>
+          </div>
         </div>
-        <script type="text/javascript" async src="//cdn.credly.com/assets/utilities/embed.js"></script>
-    </section>
-    
-    <footer>
-        <p>© 2025 王哲颢. 保留所有权利.</p>
-    </footer>
+      </div>
+
+      <!-- DATA TABLE -->
+      <div class="chart-card">
+        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h14M3 10h14M3 15h14"/></svg>流程明细列表</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th onclick="sortTable('title')">标题</th>
+              <th onclick="sortTable('flowType')">类型</th>
+              <th onclick="sortTable('priority')">优先级</th>
+              <th onclick="sortTable('stage')">当前环节</th>
+              <th onclick="sortTable('handler')">处理人</th>
+              <th onclick="sortTable('deadline')">截止日期</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">新增流程</h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <form id="flowForm" onsubmit="saveFlow(event)">
+      <input type="hidden" id="editId" value="" />
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>流程标题 <span class="req">*</span></label>
+          <input class="form-input" id="f_title" required placeholder="例如：2025年度日本雇主侧个税申报" />
+        </div>
+        <div class="form-group">
+          <label>流程类型 <span class="req">*</span></label>
+          <select class="form-select" id="f_flowType" required>
+            <option value="雇主侧申报">雇主侧申报</option>
+            <option value="外派员工年度申报">外派员工年度申报</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>当前环节 <span class="req">*</span></label>
+          <select class="form-select" id="f_stage" required>
+            <option value="待启动">待启动</option>
+            <option value="进行中">进行中</option>
+            <option value="已完成">已完成</option>
+            <option value="异常">异常</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>优先级 <span class="req">*</span></label>
+          <select class="form-select" id="f_priority" required>
+            <option value="高">高</option>
+            <option value="中">中</option>
+            <option value="低">低</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>申报国家/地区</label>
+          <input class="form-input" id="f_country" placeholder="如：日本、荷兰、英国" list="countryList" />
+          <datalist id="countryList">
+            <option value="日本"><option value="荷兰"><option value="英国"><option value="德国"><option value="法国"><option value="新加坡"><option value="美国"><option value="韩国"><option value="澳大利亚"><option value="印度">
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>所属主体</label>
+          <input class="form-input" id="f_company" placeholder="如：京东日本、京东荷兰" />
+        </div>
+        <div class="form-group">
+          <label>涉及员工</label>
+          <input class="form-input" id="f_employee" placeholder="员工姓名" />
+        </div>
+        <div class="form-group">
+          <label>当前处理人</label>
+          <input class="form-input" id="f_handler" placeholder="责任人" />
+        </div>
+        <div class="form-group">
+          <label>发起人</label>
+          <input class="form-input" id="f_creator" placeholder="发起人" />
+        </div>
+        <div class="form-group">
+          <label>供应商</label>
+          <input class="form-input" id="f_supplier" placeholder="如：XX税务服务商" />
+        </div>
+        <div class="form-group">
+          <label>截止日期</label>
+          <input class="form-input" id="f_deadline" type="date" />
+        </div>
+        <div class="form-group">
+          <label>完成时间</label>
+          <input class="form-input" id="f_completeTime" type="date" />
+        </div>
+        <div class="form-group full">
+          <label>备注说明</label>
+          <textarea class="form-textarea" id="f_description" placeholder="填写流程的补充说明、注意事项等"></textarea>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn-danger" onclick="closeModal()">取消</button>
+        <button type="submit" class="btn-primary">💾 保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>确认删除</h3>
+    <p id="confirmText">确定要删除此流程记录吗？此操作不可恢复。</p>
+    <div class="confirm-actions">
+      <button class="btn-danger" onclick="closeConfirm()">取消</button>
+      <button class="btn-primary" id="confirmDeleteBtn" onclick="confirmDeleteFlow()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============= DATA =============
+const STORAGE_KEY = 'flowDashboard_个税申报';
+let deleteTargetId = null;
+let currentSortKey = '';
+let currentSortDir = 'asc';
+let stageChartInstance = null;
+let countryChartInstance = null;
+
+const DEFAULT_DATA = [
+  { id: genId(), title:'2025年度日本雇主侧个税申报', flowType:'雇主侧申报', stage:'进行中', priority:'高', creator:'王哲颢', createTime:'2025-12-01', deadline:'2026-02-15', completeTime:'', country:'日本', company:'京东日本', employeeName:'张山', handler:'国际薪酬组核算专员', supplier:'', description:'日本雇主年度申报，需在2月底前完成申报提交' },
+  { id: genId(), title:'荷兰外派员工2024年度个税申报', flowType:'外派员工年度申报', stage:'进行中', priority:'高', creator:'李思', createTime:'2025-11-15', deadline:'2026-03-31', completeTime:'', country:'荷兰', company:'京东荷兰', employeeName:'赵岩', handler:'外派算薪专员', supplier:'XX税务服务商', description:'荷兰外派员工年度个税申报，涉及多名外派员工' },
+  { id: genId(), title:'英国雇主侧年度个税申报准备', flowType:'雇主侧申报', stage:'待启动', priority:'中', creator:'王哲颢', createTime:'2025-12-10', deadline:'2026-04-30', completeTime:'', country:'英国', company:'京东英国', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'', description:'英国年度雇主申报，提前启动准备工作' },
+  { id: genId(), title:'德国外派员工个税申报材料整理', flowType:'外派员工年度申报', stage:'待启动', priority:'中', creator:'李思', createTime:'2025-12-05', deadline:'2026-05-31', completeTime:'', country:'德国', company:'京东德国', employeeName:'陈武', handler:'外派COE', supplier:'XX税务服务商', description:'收集德国外派员工薪酬及福利数据' },
+  { id: genId(), title:'新加坡雇主侧个税申报已完结', flowType:'雇主侧申报', stage:'已完成', priority:'低', creator:'王哲颢', createTime:'2025-10-01', deadline:'2025-12-31', completeTime:'2025-12-20', country:'新加坡', company:'京东新加坡', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'算薪供应商', description:'已提交新加坡雇主年度申报并获取完税凭证' },
+  { id: genId(), title:'法国外派员工年度个税申报', flowType:'外派员工年度申报', stage:'异常', priority:'高', creator:'李思', createTime:'2025-11-20', deadline:'2026-02-28', completeTime:'', country:'法国', company:'京东法国', employeeName:'刘海', handler:'外派算薪专员', supplier:'XX税务服务商', description:'员工薪酬数据不完整，需补充非现金福利数据' },
+  { id: genId(), title:'韩国雇主侧个税数据核查', flowType:'雇主侧申报', stage:'进行中', priority:'中', creator:'王哲颢', createTime:'2025-12-08', deadline:'2026-03-15', completeTime:'', country:'韩国', company:'京东韩国', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'三方代雇供应商', description:'核查三方供应商发来的申报表金额与发薪金额一致性' },
+  { id: genId(), title:'澳大利亚外派员工个税申报', flowType:'外派员工年度申报', stage:'已完成', priority:'低', creator:'李思', createTime:'2025-09-15', deadline:'2025-11-30', completeTime:'2025-11-25', country:'澳大利亚', company:'京东澳洲', employeeName:'杨明', handler:'外派算薪专员', supplier:'XX税务服务商', description:'已完成税务申报及付款，台账已更新' },
+];
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).substring(2,8)}
+
+function loadData(){
+  let raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw){localStorage.setItem(STORAGE_KEY,JSON.stringify(DEFAULT_DATA));return DEFAULT_DATA}
+  try{return JSON.parse(raw)}catch(e){return DEFAULT_DATA}
+}
+function saveData(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+
+function getAllData(){return loadData()}
+
+// ============= FILTER & SORT =============
+function getFilteredData(){
+  let data=getAllData();
+  let t=document.getElementById('filterType').value;
+  let s=document.getElementById('filterStage').value;
+  let p=document.getElementById('filterPriority').value;
+  let q=document.getElementById('filterSearch').value.toLowerCase().trim();
+  return data.filter(d=>{
+    if(t&&d.flowType!==t)return false;
+    if(s&&d.stage!==s)return false;
+    if(p&&d.priority!==p)return false;
+    if(q&&!d.title.toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+
+function sortTable(key){
+  if(currentSortKey===key)currentSortDir=currentSortDir==='asc'?'desc':'asc';
+  else{currentSortKey=key;currentSortDir='asc'}
+  renderAll();
+}
+
+function applySort(data){
+  if(!currentSortKey)return data;
+  return[...data].sort((a,b)=>{
+    let va=a[currentSortKey]||'',vb=b[currentSortKey]||'';
+    if(currentSortKey==='deadline'||currentSortKey==='createTime'){va=va||'9999-12-31';vb=vb||'9999-12-31'}
+    let r=String(va).localeCompare(String(vb),'zh');
+    return currentSortDir==='asc'?r:-r;
+  });
+}
+
+// ============= RENDER =============
+function renderAll(){
+  let filtered=getFilteredData();
+  renderKPI(filtered);
+  renderKanban(filtered);
+  renderTable(filtered);
+  renderCharts(filtered);
+}
+
+function renderKPI(data){
+  let total=data.length;
+  let progress=data.filter(d=>d.stage==='进行中').length;
+  let done=data.filter(d=>d.stage==='已完成').length;
+  let exc=data.filter(d=>d.stage==='异常').length;
+  animateNumber('kpiTotal',total);
+  animateNumber('kpiInProgress',progress);
+  animateNumber('kpiCompleted',done);
+  animateNumber('kpiException',exc);
+}
+
+function animateNumber(id,target){
+  let el=document.getElementById(id);
+  let current=parseInt(el.textContent)||0;
+  if(current===target){el.textContent=target;return}
+  let step=Math.max(1,Math.ceil(Math.abs(target-current)/20));
+  let dir=target>current?1:-1;
+  let val=current;
+  let timer=setInterval(()=>{
+    val+=dir*step;
+    if(dir>0&&val>=target||dir<0&&val<=target){val=target;clearInterval(timer)}
+    el.textContent=val;
+  },30);
+}
+
+function renderKanban(data){
+  const stages=['待启动','进行中','已完成','异常'];
+  stages.forEach(s=>{
+    let col=document.getElementById('col_'+s);
+    let cnt=document.getElementById('count_'+s);
+    let items=data.filter(d=>d.stage===s);
+    cnt.textContent=items.length;
+    col.innerHTML=items.map(d=>`
+      <div class="kanban-card">
+        <div class="kc-header">
+          <div class="kc-title">${escHtml(d.title)}</div>
+          <span class="badge ${d.priority==='高'?'badge-high':d.priority==='中'?'badge-mid':'badge-low'}">${d.priority}</span>
+        </div>
+        <div class="kc-type"><span class="badge ${d.flowType==='雇主侧申报'?'badge-employer':'badge-expat'}">${d.flowType}</span></div>
+        <div class="kc-meta">
+          <span>🏷 ${escHtml(d.country||'-')}</span>
+          <span>👤 ${escHtml(d.handler||'-')}</span>
+          <span>📅 ${d.deadline||'-'}</span>
+        </div>
+        <div class="kc-actions">
+          <button class="btn-text" onclick="openEditModal('${d.id}')">编辑</button>
+          <button class="btn-text" onclick="showDeleteConfirm('${d.id}')" style="color:var(--chart-danger)">删除</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+function renderTable(data){
+  let sorted=applySort(data);
+  let tbody=document.getElementById('tableBody');
+  if(sorted.length===0){
+    tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="icon">📭</div><p>暂无匹配的流程记录，点击右上角「新增流程」添加</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=sorted.map(d=>`
+    <tr>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(d.title)}">${escHtml(d.title)}</td>
+      <td><span class="badge ${d.flowType==='雇主侧申报'?'badge-employer':'badge-expat'}">${d.flowType==='雇主侧申报'?'雇主':'外派'}</span></td>
+      <td><span class="badge ${d.priority==='高'?'badge-high':d.priority==='中'?'badge-mid':'badge-low'}">${d.priority}</span></td>
+      <td><span class="badge ${d.stage==='已完成'?'badge-done':d.stage==='异常'?'badge-exception':d.stage==='进行中'?'badge-progress':'badge-start'}">${d.stage}</span></td>
+      <td>${escHtml(d.handler||'-')}</td>
+      <td style="font-size:12px;color:${d.deadline?((d.stage!=='已完成'&&new Date(d.deadline)<new Date())?'var(--chart-danger)':'var(--grey-2)'):'var(--grey-3)'}">${d.deadline||'-'}</td>
+      <td>
+        <button class="btn-text" onclick="openEditModal('${d.id}')">编辑</button>
+        <button class="btn-text" onclick="showDeleteConfirm('${d.id}')" style="color:var(--chart-danger)">删除</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderCharts(data){
+  // Stage distribution
+  const stages=['待启动','进行中','已完成','异常'];
+  const stageCounts=stages.map(s=>data.filter(d=>d.stage===s).length);
+  const stageColors=['#185DD3','#42A5F5','#34C759','#FF3B30'];
+
+  if(stageChartInstance)stageChartInstance.destroy();
+  let ctx=document.getElementById('stageChart').getContext('2d');
+  stageChartInstance=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:stages,
+      datasets:[{
+        label:'流程数量',
+        data:stageCounts,
+        backgroundColor:stageColors,
+        borderRadius:4,
+        barPercentage:0.6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#202D3F',titleFont:{size:12},bodyFont:{size:12},cornerRadius:8,padding:10}
+      },
+      scales:{
+        y:{beginAtZero:true,ticks:{font:{size:12},color:'#8C96A5'},grid:{color:'#EDF1F5',dash:[3,3]}},
+        x:{ticks:{font:{size:12},color:'#5A6778'},grid:{display:false}}
+      }
+    }
+  });
+
+  // Country distribution
+  let countryMap={};
+  data.forEach(d=>{if(d.country){countryMap[d.country]=(countryMap[d.country]||0)+1}});
+  let countries=Object.keys(countryMap);
+  let countryVals=Object.values(countryMap);
+  const countryColors=['#185DD3','#42A5F5','#00BFA5','#7C4DFF','#FF9500','#34C759','#FF3B30','#64B5F6','#90CAF9','#BBDEFB'].slice(0,countries.length);
+
+  if(countryChartInstance)countryChartInstance.destroy();
+  let ctx2=document.getElementById('countryChart').getContext('2d');
+  countryChartInstance=new Chart(ctx2,{
+    type:'doughnut',
+    data:{
+      labels:countries,
+      datasets:[{
+        data:countryVals,
+        backgroundColor:countryColors,
+        borderWidth:0,
+        hoverOffset:6
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      cutout:'55%',
+      plugins:{
+        legend:{
+          position:'right',
+          labels:{
+            font:{size:12,family:'Microsoft YaHei'},
+            color:'#5A6778',
+            padding:12,
+            usePointStyle:true,
+            pointStyle:'circle'
+          }
+        },
+        tooltip:{
+          backgroundColor:'#202D3F',
+          titleFont:{size:12},
+          bodyFont:{size:12},
+          cornerRadius:8,
+          padding:10,
+          callbacks:{
+            label:function(ctx){return ctx.label+': '+ctx.parsed+' 条'}
+          }
+        }
+      }
+    }
+  });
+}
+
+// ============= MODAL =============
+function openAddModal(){
+  document.getElementById('modalTitle').textContent='新增流程';
+  document.getElementById('editId').value='';
+  document.getElementById('flowForm').reset();
+  document.getElementById('f_creator').value='王哲颢';
+  document.getElementById('f_stage').value='待启动';
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function openEditModal(id){
+  let data=getAllData();
+  let item=data.find(d=>d.id===id);
+  if(!item)return;
+  document.getElementById('modalTitle').textContent='编辑流程';
+  document.getElementById('editId').value=id;
+  document.getElementById('f_title').value=item.title||'';
+  document.getElementById('f_flowType').value=item.flowType||'雇主侧申报';
+  document.getElementById('f_stage').value=item.stage||'待启动';
+  document.getElementById('f_priority').value=item.priority||'中';
+  document.getElementById('f_country').value=item.country||'';
+  document.getElementById('f_company').value=item.companyName||'';
+  document.getElementById('f_employee').value=item.employeeName||'';
+  document.getElementById('f_handler').value=item.handler||'';
+  document.getElementById('f_creator').value=item.creator||'';
+  document.getElementById('f_supplier').value=item.supplier||'';
+  document.getElementById('f_deadline').value=item.deadline||'';
+  document.getElementById('f_completeTime').value=item.completeTime||'';
+  document.getElementById('f_description').value=item.description||'';
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function saveFlow(e){
+  e.preventDefault();
+  let data=getAllData();
+  let editId=document.getElementById('editId').value;
+  let now=new Date().toISOString().split('T')[0];
+  let obj={
+    title:document.getElementById('f_title').value.trim(),
+    flowType:document.getElementById('f_flowType').value,
+    stage:document.getElementById('f_stage').value,
+    priority:document.getElementById('f_priority').value,
+    country:document.getElementById('f_country').value.trim(),
+    companyName:document.getElementById('f_company').value.trim(),
+    employeeName:document.getElementById('f_employee').value.trim(),
+    handler:document.getElementById('f_handler').value.trim(),
+    creator:document.getElementById('f_creator').value.trim(),
+    supplier:document.getElementById('f_supplier').value.trim(),
+    deadline:document.getElementById('f_deadline').value,
+    completeTime:document.getElementById('f_completeTime').value,
+    description:document.getElementById('f_description').value.trim()
+  };
+  if(!obj.title)return;
+  if(editId){
+    let idx=data.findIndex(d=>d.id===editId);
+    if(idx>=0){Object.assign(data[idx],obj)}
+  }else{
+    obj.id=genId();
+    obj.createTime=now;
+    data.push(obj);
+  }
+  saveData(data);
+  closeModal();
+  renderAll();
+}
+
+// ============= DELETE =============
+let deleteId=null;
+function showDeleteConfirm(id){
+  deleteId=id;
+  let data=getAllData();
+  let item=data.find(d=>d.id===id);
+  document.getElementById('confirmText').textContent='确定要删除「'+(item?escHtml(item.title):'此记录')+'」吗？此操作不可恢复。';
+  document.getElementById('confirmOverlay').classList.add('active');
+}
+function closeConfirm(){
+  deleteId=null;
+  document.getElementById('confirmOverlay').classList.remove('active');
+}
+function confirmDeleteFlow(){
+  if(!deleteId){closeConfirm();return}
+  let data=getAllData().filter(d=>d.id!==deleteId);
+  saveData(data);
+  deleteId=null;
+  closeConfirm();
+  renderAll();
+}
+
+// ============= FILTER EVENTS =============
+document.getElementById('filterType').addEventListener('change',renderAll);
+document.getElementById('filterStage').addEventListener('change',renderAll);
+document.getElementById('filterPriority').addEventListener('change',renderAll);
+document.getElementById('filterSearch').addEventListener('input',renderAll);
+
+// Modal click outside to close
+document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeConfirm()});
+
+// ============= UTILITY =============
+function escHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ============= INIT =============
+renderAll();
+</script>
 </body>
 </html>
