@@ -1,688 +1,856 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>海外发薪年度个税申报流程追踪看板</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;padding:0;width:100%;max-width:100vw;overflow-x:hidden;overflow-y:auto;min-height:100vh}
-:root{
-  --primary:#185DD3;--primary-light:#E8F0FE;--primary-dark:#1248A5;
-  --bg-page:#FFFFFF;--bg-card:#FFFFFF;--bg-panel:#F5F7FA;--bg-section:#EDF1F5;
-  --grey-1:#202D3F;--grey-2:#5A6778;--grey-3:#8C96A5;--grey-4:#D0D5DD;
-  --chart-primary:#185DD3;--chart-secondary:#42A5F5;--chart-tertiary:#00BFA5;
-  --chart-quaternary:#7C4DFF;--chart-success:#34C759;--chart-warning:#FF9500;--chart-danger:#FF3B30;
-  --status-success:#34C759;--status-danger:#FF3B30;--status-warning:#FF9500;--status-neutral:#8C96A5;
-  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:20px;--space-xl:24px;
-  --radius-sm:6px;--radius-md:8px;--radius-lg:12px;--radius-xl:16px;
-  --shadow-card:0 1px 3px rgba(0,0,0,0.04);--shadow-hover:0 4px 12px rgba(0,0,0,0.08);
-  --shadow-active:0 2px 8px rgba(24,93,211,0.15);--shadow-elevated:0 8px 24px rgba(0,0,0,0.10);
-  --shadow-dropdown:0 4px 16px rgba(0,0,0,0.12);
-  --font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Noto Sans SC",sans-serif;
-}
-body{font-family:var(--font-family);background:var(--bg-page);color:var(--grey-1)}
-.dashboard{width:100%;max-width:1680px;margin:0 auto;padding:var(--space-xl);overflow:hidden}
-/* HEADER */
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-xl);flex-wrap:wrap;gap:12px}
-.header-title{font-size:32px;font-weight:500;color:var(--grey-1);display:flex;align-items:center;gap:12px}
-.header-title .sub{font-size:14px;font-weight:400;color:var(--grey-3)}
-.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.filter-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.filter-dropdown{padding:8px 14px;background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);cursor:pointer;transition:border-color .2s;min-width:130px}
-.filter-dropdown:hover{border-color:var(--primary)}
-.filter-search{padding:8px 14px;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);outline:none;transition:border-color .2s;min-width:200px}
-.filter-search:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,93,211,0.1)}
-.btn-primary{padding:10px 20px;background:var(--primary);color:#FFF;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:500;cursor:pointer;transition:background .2s,box-shadow .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.btn-primary:hover{background:var(--primary-dark);box-shadow:0 2px 8px rgba(24,93,211,0.3)}
-.btn-secondary{padding:8px 14px;background:var(--primary-light);color:var(--primary);border:none;border-radius:var(--radius-md);font-size:13px;font-weight:500;cursor:pointer;transition:background .2s}
-.btn-secondary:hover{background:#D0E2FF}
-.btn-danger{padding:8px 14px;background:#FFF;color:var(--chart-danger);border:1px solid var(--chart-danger);border-radius:var(--radius-md);font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
-.btn-danger:hover{background:#FFF0F0}
-.btn-text{padding:4px 8px;background:none;border:none;color:var(--primary);font-size:13px;cursor:pointer;transition:color .2s}
-.btn-text:hover{color:var(--primary-dark);text-decoration:underline}
-/* MAIN LAYOUT */
-.main-content{display:flex;gap:var(--space-lg);width:100%;flex-wrap:wrap}
-.left-panel{flex:1 1 60%;min-width:0}
-.right-panel{flex:1 1 38%;min-width:0}
-/* KPI GRID */
-.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);margin-bottom:var(--space-md)}
-.metric-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-lg);padding:20px 24px;box-shadow:var(--shadow-card);position:relative;overflow:hidden;transition:box-shadow .2s,border-color .2s,transform .15s}
-.metric-card:hover{box-shadow:var(--shadow-hover);border-color:var(--primary);transform:translateY(-1px)}
-.metric-card::before{content:'';position:absolute;left:0;top:0;right:0;height:3px;background:linear-gradient(90deg,var(--primary),var(--chart-secondary));border-radius:12px 12px 0 0}
-.metric-card .mc-label{font-size:16px;font-weight:500;color:var(--grey-2);margin-bottom:8px}
-.metric-card .mc-value{font-size:32px;font-weight:500;color:var(--grey-1)}
-.metric-card .mc-sub{font-size:12px;color:var(--grey-3);margin-top:4px}
-/* CARD/CONTAINER */
-.chart-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-lg);padding:var(--space-lg);box-shadow:var(--shadow-card);margin-bottom:var(--space-md)}
-.section-title{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:500;color:var(--grey-1);margin-bottom:var(--space-md)}
-.section-title .icon{width:20px;height:20px;color:var(--primary);flex-shrink:0}
-.chart-container{width:100%;height:260px;position:relative}
-/* KANBAN */
-.kanban-section{background:var(--bg-panel);border:1px solid var(--bg-section);border-radius:var(--radius-lg);padding:var(--space-lg);margin-bottom:var(--space-md)}
-.kanban-columns{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px}
-.kanban-col{flex:1 1 220px;min-width:180px;max-width:100%}
-.kanban-col-title{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:500;color:var(--grey-1);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--grey-4)}
-.kanban-col-title .count{font-size:12px;color:var(--grey-3);background:var(--bg-panel);padding:2px 8px;border-radius:10px}
-.kanban-card{background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow-card);transition:box-shadow .2s,border-color .2s;cursor:default}
-.kanban-card:hover{box-shadow:var(--shadow-hover);border-color:var(--primary)}
-.kanban-card .kc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px}
-.kanban-card .kc-title{font-size:14px;font-weight:500;color:var(--grey-1);line-height:1.3}
-.kanban-card .kc-type{font-size:11px;color:var(--grey-3);margin-bottom:4px}
-.kanban-card .kc-meta{display:flex;flex-wrap:wrap;gap:4px;font-size:11px;color:var(--grey-3)}
-.kanban-card .kc-meta span{background:var(--bg-panel);padding:2px 6px;border-radius:4px}
-.kanban-card .kc-actions{display:flex;gap:4px;margin-top:6px;justify-content:flex-end}
-/* PRIORITY BADGE */
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
-.badge-high{background:rgba(255,59,48,0.1);color:var(--chart-danger)}
-.badge-mid{background:rgba(255,149,0,0.1);color:var(--chart-warning)}
-.badge-low{background:rgba(138,150,165,0.1);color:var(--grey-3)}
-.badge-employer{background:rgba(24,93,211,0.1);color:var(--primary)}
-.badge-expat{background:rgba(0,191,165,0.1);color:var(--chart-tertiary)}
-.badge-done{background:rgba(52,199,89,0.1);color:var(--chart-success)}
-.badge-exception{background:rgba(255,59,48,0.1);color:var(--chart-danger)}
-.badge-progress{background:rgba(66,165,245,0.1);color:var(--chart-secondary)}
-.badge-start{background:rgba(138,150,165,0.1);color:var(--grey-2)}
-/* TABLE */
-.data-table{width:100%;border-collapse:separate;border-spacing:0;background:#FFF;border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--grey-4)}
-.data-table th{padding:12px 16px;font-size:12px;font-weight:500;color:var(--grey-2);text-align:left;border-bottom:1px solid var(--bg-section);background:var(--bg-panel);letter-spacing:0.02em;cursor:pointer;user-select:none;white-space:nowrap}
-.data-table th:hover{color:var(--primary)}
-.data-table td{padding:10px 14px;font-size:13px;color:var(--grey-1);border-bottom:1px solid var(--bg-section)}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tbody tr:hover{background:var(--bg-panel)}
-.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);margin-bottom:var(--space-md)}
-/* MODAL */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(2px)}
-.modal-overlay.active{display:flex}
-.modal{background:#FFF;border-radius:var(--radius-xl);width:min(90%,620px);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-elevated);padding:var(--space-xl)}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-lg);padding-bottom:var(--space-md);border-bottom:1px solid var(--bg-section)}
-.modal-header h2{font-size:20px;font-weight:500;color:var(--grey-1);margin:0}
-.modal-close{width:32px;height:32px;border:none;background:var(--bg-panel);border-radius:50%;cursor:pointer;font-size:18px;color:var(--grey-2);display:flex;align-items:center;justify-content:center;transition:background .2s}
-.modal-close:hover{background:var(--grey-4)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md)}
-.form-group{margin-bottom:var(--space-md)}
-.form-group.full{grid-column:1/-1}
-.form-group label{display:block;font-size:13px;font-weight:500;color:var(--grey-2);margin-bottom:6px}
-.form-group label .req{color:var(--chart-danger);margin-left:2px}
-.form-input,.form-select,.form-textarea{padding:10px 14px;background:#FFF;border:1px solid var(--grey-4);border-radius:var(--radius-md);font-size:14px;color:var(--grey-1);transition:border-color .2s,box-shadow .2s;width:100%;font-family:var(--font-family)}
-.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(24,93,211,0.1)}
-.form-textarea{resize:vertical;min-height:80px}
-.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:var(--space-lg);padding-top:var(--space-md);border-top:1px solid var(--bg-section)}
-/* CONFIRM DIALOG */
-.confirm-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1001;justify-content:center;align-items:center}
-.confirm-overlay.active{display:flex}
-.confirm-box{background:#FFF;border-radius:var(--radius-lg);padding:var(--space-xl);width:min(90%,400px);box-shadow:var(--shadow-elevated)}
-.confirm-box h3{font-size:18px;font-weight:500;color:var(--grey-1);margin:0 0 8px}
-.confirm-box p{font-size:14px;color:var(--grey-2);margin:0 0 var(--space-lg)}
-.confirm-actions{display:flex;justify-content:flex-end;gap:10px}
-/* Empty state */
-.empty-state{text-align:center;padding:40px 20px;color:var(--grey-3)}
-.empty-state .icon{font-size:40px;margin-bottom:12px}
-.empty-state p{font-size:14px;margin:0}
-/* RESPONSIVE */
-@media(max-width:1280px){.left-panel{flex:1 1 55%}.right-panel{flex:1 1 42%}}
-@media(max-width:1024px){
-  .main-content{flex-direction:column}
-  .left-panel,.right-panel{flex:1 1 100%}
-  .kanban-columns{flex-wrap:wrap}
-  .kanban-col{flex:1 1 180px}
-}
-@media(max-width:768px){
-  .dashboard{padding:12px}
-  .kpi-grid{grid-template-columns:1fr 1fr}
-  .header{flex-direction:column;align-items:flex-start}
-  .header-right{width:100%}
-  .filter-bar{width:100%;flex-wrap:wrap}
-  .filter-bar>*{flex:1 1 auto;min-width:0}
-  .filter-search{width:100%;min-width:0}
-  .form-grid{grid-template-columns:1fr}
-}
-@media(max-width:480px){
-  .kpi-grid{grid-template-columns:1fr}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>海外员工试用期转正流程追踪看板</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; max-width: 100vw; overflow-x: hidden;
+      overflow-y: auto; min-height: 100vh;
+      font-family: "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      background: #F5F7FA;
+    }
+    :root {
+      --primary: #185DD3;
+      --primary-light: #E8F0FE;
+      --primary-dark: #1248A5;
+      --bg-page: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-panel: #F5F7FA;
+      --bg-section: #EDF1F5;
+      --grey-1: #202D3F;
+      --grey-2: #5A6778;
+      --grey-3: #8C96A5;
+      --grey-4: #D0D5DD;
+      --chart-primary: #185DD3;
+      --chart-secondary: #42A5F5;
+      --chart-tertiary: #00BFA5;
+      --chart-quaternary: #7C4DFF;
+      --chart-success: #34C759;
+      --chart-warning: #FF9500;
+      --chart-danger: #FF3B30;
+      --status-success: #34C759;
+      --status-danger: #FF3B30;
+      --status-warning: #FF9500;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 16px;
+      --space-lg: 20px;
+      --space-xl: 24px;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+      --shadow-elevated: 0 8px 24px rgba(0,0,0,0.10);
+    }
+    .dashboard { width: 100%; max-width: 1680px; margin: 0 auto; padding: var(--space-xl); overflow: hidden; }
+    .header {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      padding: var(--space-lg) 0; gap: var(--space-md);
+    }
+    .header h1 { font-size: 28px; font-weight: 500; color: var(--grey-1); margin: 0; }
+    .filter-bar { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+    .filter-btn {
+      padding: 8px 14px; background: var(--bg-card); border: 1px solid var(--grey-4);
+      border-radius: var(--radius-md); font-size: 13px; color: var(--grey-2); cursor: pointer;
+      display: flex; align-items: center; gap: 6px; transition: all .2s;
+    }
+    .filter-btn:hover { border-color: var(--primary); }
+    .filter-btn.active { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .btn-primary {
+      padding: 10px 20px; background: var(--primary); color: #fff; border: none;
+      border-radius: var(--radius-md); font-size: 14px; font-weight: 500; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all .2s;
+    }
+    .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow-active); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--grey-4); color: var(--grey-2);
+      padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; transition: all .2s;
+    }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* KPI Grid */
+    .kpi-groups { display: flex; flex-direction: column; gap: var(--space-lg); margin: var(--space-md) 0; }
+    .kpi-group-block { width: 100%; }
+    .kpi-group-title { font-size: 13px; color: var(--grey-2); margin-bottom: 8px; font-weight: 500; }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--space-md);
+    }
+    .metric-card {
+      background: var(--bg-card); border: 1px solid var(--grey-4);
+      border-radius: var(--radius-lg); padding: 18px 20px;
+      box-shadow: var(--shadow-card); position: relative; overflow: hidden;
+      cursor: pointer; transition: all .2s;
+      min-height: 168px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+    .metric-card.has-chart { min-height: 320px; }
+    .metric-card::before {
+      content: ''; position: absolute; left: 0; top: 0; right: 0;
+      height: 3px; background: linear-gradient(90deg, var(--primary), var(--chart-secondary));
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+    .metric-card:hover { box-shadow: var(--shadow-hover); border-color: var(--primary); transform: translateY(-1px); }
+    .metric-card .label { font-size: 13px; color: var(--grey-3); margin-bottom: 4px; }
+    .metric-card .value { font-size: 28px; font-weight: 500; color: var(--grey-1); line-height: 1.2; }
+    .metric-card .unit { font-size: 12px; color: var(--grey-3); }
+    .metric-card .sub { font-size: 12px; color: var(--grey-2); margin-top: 6px; }
+    .chart-wrap { margin-top: 10px; border-top: 1px dashed var(--bg-section); padding-top: 10px; }
+    .chart-title { font-size: 12px; color: var(--grey-2); margin-bottom: 6px; }
+    .chart-caption { margin-top: 6px; font-size: 11px; color: var(--grey-3); line-height: 1.4; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 8px 12px; margin-top: 6px; font-size: 11px; color: var(--grey-2); }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .mini-list { margin: 6px 0 0; padding-left: 16px; font-size: 11px; color: var(--grey-2); }
+    .mini-list li { margin-bottom: 2px; }
+    .health-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 500;
+      margin-top: 8px;
+      width: fit-content;
+    }
+    .health-badge.healthy { background: rgba(52,199,89,0.1); color: var(--status-success); }
+    .health-badge.warning { background: rgba(255,149,0,0.1); color: var(--status-warning); }
+    .health-badge.danger { background: rgba(255,59,48,0.1); color: var(--status-danger); }
+
+    /* Section Titles */
+    .section-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 18px; font-weight: 500; color: var(--grey-1);
+      padding: var(--space-md) 0; border-bottom: 1px solid var(--bg-section);
+      margin-bottom: var(--space-md);
+    }
+    .section-title .icon { width: 20px; height: 20px; color: var(--primary); }
+
+    /* Tab Group */
+    .tab-group {
+      display: flex; gap: 0; background: var(--bg-card);
+      border: 1px solid var(--grey-4); border-radius: var(--radius-md);
+      overflow: hidden; margin-bottom: var(--space-md);
+    }
+    .tab-btn {
+      padding: 8px 16px; font-size: 13px; font-weight: 500; border: none;
+      cursor: pointer; background: transparent; color: var(--grey-2);
+      transition: all .2s; border-right: 1px solid var(--grey-4);
+    }
+    .tab-btn:last-child { border-right: none; }
+    .tab-btn.active { background: var(--primary); color: #fff; }
+    .tab-btn:hover:not(.active) { color: var(--primary); background: var(--primary-light); }
+
+    /* Data Table */
+    .table-wrapper { overflow-x: auto; border: 1px solid var(--grey-4); border-radius: var(--radius-lg); background: var(--bg-card); }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; table-layout: auto; }
+    th {
+      padding: 10px 12px; font-size: 12px; font-weight: 500; color: var(--grey-3);
+      background: var(--bg-panel); text-align: left; white-space: nowrap;
+      border-bottom: 1px solid var(--bg-section); position: sticky; top: 0;
+    }
+    td { padding: 10px 12px; font-size: 13px; color: var(--grey-1); border-bottom: 1px solid var(--bg-section); }
+    tr:hover td { background: var(--primary-light); }
+    .status-tag {
+      display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 500;
+    }
+    .status-tag.progress { background: rgba(24,93,211,0.1); color: var(--primary); }
+    .status-tag.done { background: rgba(52,199,89,0.1); color: var(--status-success); }
+    .status-tag.delay { background: rgba(255,149,0,0.1); color: var(--status-warning); }
+    .status-tag.reject { background: rgba(255,59,48,0.1); color: var(--status-danger); }
+    .status-tag.early { background: rgba(124,77,255,0.1); color: var(--chart-quaternary); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      z-index: 1000; justify-content: center; align-items: flex-start; padding-top: 60px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-card); border-radius: var(--radius-xl);
+      width: min(90%, 560px); max-width: 560px; max-height: 85vh; overflow-y: auto;
+      box-shadow: var(--shadow-elevated); padding: var(--space-xl);
+    }
+    .modal h3 { font-size: 18px; font-weight: 500; color: var(--grey-1); margin: 0 0 var(--space-md); }
+    .modal .close {
+      float: right; background: none; border: none; font-size: 20px;
+      cursor: pointer; color: var(--grey-3);
+    }
+    .form-group { margin-bottom: var(--space-md); }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; color: var(--grey-2); margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--grey-4);
+      border-radius: var(--radius-md); font-size: 13px; color: var(--grey-1);
+      transition: border-color .2s;
+    }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-light); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+    .form-actions { display: flex; gap: var(--space-sm); justify-content: flex-end; margin-top: var(--space-md); }
+
+    /* Delete Confirm */
+    .delete-modal { text-align: center; }
+    .delete-modal p { color: var(--grey-2); font-size: 14px; margin: var(--space-md) 0; }
+    .delete-modal .btn-group { display: flex; gap: var(--space-sm); justify-content: center; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 40px; color: var(--grey-3); font-size: 14px; }
+
+    @media (max-width: 1024px) {
+      .dashboard { padding: 12px; }
+      .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 768px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-<div class="dashboard">
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-title">
-      📋 海外发薪年度个税申报看板
-      <span class="sub">流程追踪</span>
-    </div>
-    <div class="header-right">
+  <div class="dashboard">
+    <!-- Header -->
+    <div class="header">
+      <h1>🌐 海外员工试用期转正 · 流程追踪看板</h1>
       <div class="filter-bar">
-        <select class="filter-dropdown" id="filterType">
-          <option value="">全部类型</option>
-          <option value="雇主侧申报">雇主侧申报</option>
-          <option value="外派员工年度申报">外派员工年度申报</option>
-        </select>
-        <select class="filter-dropdown" id="filterStage">
-          <option value="">全部环节</option>
-          <option value="待启动">待启动</option>
+        <select class="filter-btn" id="globalStatusFilter" onchange="applyFilters()">
+          <option value="">全部状态</option>
           <option value="进行中">进行中</option>
           <option value="已完成">已完成</option>
-          <option value="异常">异常</option>
+          <option value="延期">延期</option>
+          <option value="不予转正">不予转正</option>
+          <option value="已离职">已离职</option>
         </select>
-        <select class="filter-dropdown" id="filterPriority">
-          <option value="">全部优先级</option>
-          <option value="高">高</option>
-          <option value="中">中</option>
-          <option value="低">低</option>
+        <select class="filter-btn" id="globalTypeFilter" onchange="applyFilters()">
+          <option value="">全部类型</option>
+          <option value="O序列">O序列</option>
+          <option value="非O序列">非O序列</option>
+          <option value="提前转正">提前转正</option>
         </select>
-        <input class="filter-search" id="filterSearch" placeholder="🔍 搜索流程标题..." />
+        <input class="filter-btn" style="min-width:140px" id="globalSearch" placeholder="🔍 搜索员工姓名..." oninput="applyFilters()">
+        <button class="btn-primary" onclick="openAddModal()">➕ 新增流程</button>
       </div>
-      <button class="btn-primary" onclick="openAddModal()">＋ 新增流程</button>
     </div>
+
+    <!-- KPI Cards -->
+    <div class="section-title"><span class="icon">📊</span> 管理指标总览</div>
+    <div class="kpi-groups">
+      <div class="kpi-group-block">
+        <div class="kpi-group-title">无图指标卡片</div>
+        <div class="kpi-grid kpi-grid-nochart" id="kpiNoChartGrid"></div>
+      </div>
+      <div class="kpi-group-block">
+        <div class="kpi-group-title">图表指标卡片</div>
+        <div class="kpi-grid kpi-grid-chart" id="kpiChartGrid"></div>
+      </div>
+    </div>
+
+    <!-- Detail Tabs -->
+    <div class="section-title"><span class="icon">📋</span> 流程明细追踪</div>
+    <div class="tab-group" id="tabGroup">
+      <button class="tab-btn active" data-tab="flow" onclick="switchTab('flow')">📋 流程追踪明细</button>
+      <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">⚠️ 风险预警明细</button>
+      <button class="tab-btn" data-tab="stage" onclick="switchTab('stage')">🔍 环节追踪明细</button>
+    </div>
+
+    <!-- Tables -->
+    <div id="flowTable" class="table-wrapper"></div>
+    <div id="riskTable" class="table-wrapper" style="display:none"></div>
+    <div id="stageTable" class="table-wrapper" style="display:none"></div>
   </div>
 
-  <div class="main-content">
-    <!-- LEFT PANEL -->
-    <div class="left-panel">
-      <!-- KPI CARDS -->
-      <div class="kpi-grid" id="kpiGrid">
-        <div class="metric-card"><div class="mc-label">📊 总流程数</div><div class="mc-value" id="kpiTotal">0</div><div class="mc-sub">全部申报流程</div></div>
-        <div class="metric-card"><div class="mc-label">🔄 进行中</div><div class="mc-value" id="kpiInProgress" style="color:var(--chart-secondary)">0</div><div class="mc-sub">待核查/复核/提交</div></div>
-        <div class="metric-card"><div class="mc-label">✅ 已完成</div><div class="mc-value" id="kpiCompleted" style="color:var(--chart-success)">0</div><div class="mc-sub">已申报并归档</div></div>
-        <div class="metric-card"><div class="mc-label">⚠️ 异常单</div><div class="mc-value" id="kpiException" style="color:var(--chart-danger)">0</div><div class="mc-sub">需重点关注处理</div></div>
+  <!-- Add/Edit Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <button class="close" onclick="closeAddModal()">✕</button>
+      <h3 id="modalTitle">新增转正流程</h3>
+      <div class="form-group">
+        <label>员工姓名</label>
+        <input class="form-control" id="fEmployeeName" placeholder="输入员工姓名">
       </div>
-
-      <!-- STAGE DISTRIBUTION CHART -->
-      <div class="chart-card">
-        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="14" height="14" rx="2"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="10" y1="3" x2="10" y2="17"/></svg>各环节流程数量分布</div>
-        <div class="chart-container"><canvas id="stageChart"></canvas></div>
+      <div class="form-row">
+        <div class="form-group"><label>员工类型</label><select class="form-control" id="fEmployeeType"><option>O序列</option><option>非O序列</option><option>提前转正</option></select></div>
+        <div class="form-group"><label>员工工号</label><input class="form-control" id="fEmployeeId" placeholder="ERP"></div>
       </div>
-
-      <!-- COUNTRY DISTRIBUTION -->
-      <div class="chart-card">
-        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3a15 15 0 010 14"/></svg>申报国家分布</div>
-        <div class="chart-container"><canvas id="countryChart"></canvas></div>
+      <div class="form-row">
+        <div class="form-group"><label>部门</label><input class="form-control" id="fDepartment"></div>
+        <div class="form-group"><label>地区</label><input class="form-control" id="fRegion"></div>
       </div>
-    </div>
-
-    <!-- RIGHT PANEL -->
-    <div class="right-panel">
-      <!-- KANBAN -->
-      <div class="kanban-section">
-        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="5" height="14" rx="1"/><rect x="8" y="3" width="5" height="14" rx="1"/><rect x="14" y="3" width="5" height="14" rx="1"/></svg>流程看板</div>
-        <div class="kanban-columns" id="kanbanColumns">
-          <div class="kanban-col" data-stage="待启动">
-            <div class="kanban-col-title" style="border-bottom-color:var(--primary)">📋 待启动/准备中 <span class="count" id="count_待启动">0</span></div>
-            <div class="kanban-cards" id="col_待启动"></div>
-          </div>
-          <div class="kanban-col" data-stage="进行中">
-            <div class="kanban-col-title" style="border-bottom-color:var(--chart-secondary)">⚙️ 进行中 <span class="count" id="count_进行中">0</span></div>
-            <div class="kanban-cards" id="col_进行中"></div>
-          </div>
-          <div class="kanban-col" data-stage="已完成">
-            <div class="kanban-col-title" style="border-bottom-color:var(--chart-success)">✅ 已完成 <span class="count" id="count_已完成">0</span></div>
-            <div class="kanban-cards" id="col_已完成"></div>
-          </div>
-          <div class="kanban-col" data-stage="异常">
-            <div class="kanban-col-title" style="border-bottom-color:var(--chart-danger)">⚠️ 异常 <span class="count" id="count_异常">0</span></div>
-            <div class="kanban-cards" id="col_异常"></div>
-          </div>
-        </div>
+      <div class="form-group"><label>业务上级B（直接管理者）</label><input class="form-control" id="fDirectManager"></div>
+      <div class="form-group"><label>业务上级A（间接管理者）</label><input class="form-control" id="fIndirectManager"></div>
+      <div class="form-group"><label>HRBP</label><input class="form-control" id="fHrbp"></div>
+      <div class="form-row">
+        <div class="form-group"><label>试用期开始</label><input class="form-control" id="fStartDate" type="date"></div>
+        <div class="form-group"><label>试用期到期</label><input class="form-control" id="fEndDate" type="date"></div>
       </div>
-
-      <!-- DATA TABLE -->
-      <div class="chart-card">
-        <div class="section-title"><svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h14M3 10h14M3 15h14"/></svg>流程明细列表</div>
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead><tr>
-              <th onclick="sortTable('title')">标题</th>
-              <th onclick="sortTable('flowType')">类型</th>
-              <th onclick="sortTable('priority')">优先级</th>
-              <th onclick="sortTable('stage')">当前环节</th>
-              <th onclick="sortTable('handler')">处理人</th>
-              <th onclick="sortTable('deadline')">截止日期</th>
-              <th>操作</th>
-            </tr></thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
+      <div class="form-row">
+        <div class="form-group"><label>当前环节</label><select class="form-control" id="fStage"><option>触发转正提醒</option><option>合议转正意见</option><option>审批转正意见</option><option>沟通转正事宜</option><option>办理转正手续</option><option>归档转正材料</option></select></div>
+        <div class="form-group"><label>流程状态</label><select class="form-control" id="fStatus"><option>进行中</option><option>已完成</option><option>延期</option><option>不予转正</option><option>已离职</option></select></div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ADD/EDIT MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-header">
-      <h2 id="modalTitle">新增流程</h2>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <form id="flowForm" onsubmit="saveFlow(event)">
-      <input type="hidden" id="editId" value="" />
-      <div class="form-grid">
-        <div class="form-group full">
-          <label>流程标题 <span class="req">*</span></label>
-          <input class="form-input" id="f_title" required placeholder="例如：2025年度日本雇主侧个税申报" />
-        </div>
-        <div class="form-group">
-          <label>流程类型 <span class="req">*</span></label>
-          <select class="form-select" id="f_flowType" required>
-            <option value="雇主侧申报">雇主侧申报</option>
-            <option value="外派员工年度申报">外派员工年度申报</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>当前环节 <span class="req">*</span></label>
-          <select class="form-select" id="f_stage" required>
-            <option value="待启动">待启动</option>
-            <option value="进行中">进行中</option>
-            <option value="已完成">已完成</option>
-            <option value="异常">异常</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>优先级 <span class="req">*</span></label>
-          <select class="form-select" id="f_priority" required>
-            <option value="高">高</option>
-            <option value="中">中</option>
-            <option value="低">低</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>申报国家/地区</label>
-          <input class="form-input" id="f_country" placeholder="如：日本、荷兰、英国" list="countryList" />
-          <datalist id="countryList">
-            <option value="日本"><option value="荷兰"><option value="英国"><option value="德国"><option value="法国"><option value="新加坡"><option value="美国"><option value="韩国"><option value="澳大利亚"><option value="印度">
-          </datalist>
-        </div>
-        <div class="form-group">
-          <label>所属主体</label>
-          <input class="form-input" id="f_company" placeholder="如：京东日本、京东荷兰" />
-        </div>
-        <div class="form-group">
-          <label>涉及员工</label>
-          <input class="form-input" id="f_employee" placeholder="员工姓名" />
-        </div>
-        <div class="form-group">
-          <label>当前处理人</label>
-          <input class="form-input" id="f_handler" placeholder="责任人" />
-        </div>
-        <div class="form-group">
-          <label>发起人</label>
-          <input class="form-input" id="f_creator" placeholder="发起人" />
-        </div>
-        <div class="form-group">
-          <label>供应商</label>
-          <input class="form-input" id="f_supplier" placeholder="如：XX税务服务商" />
-        </div>
-        <div class="form-group">
-          <label>截止日期</label>
-          <input class="form-input" id="f_deadline" type="date" />
-        </div>
-        <div class="form-group">
-          <label>完成时间</label>
-          <input class="form-input" id="f_completeTime" type="date" />
-        </div>
-        <div class="form-group full">
-          <label>备注说明</label>
-          <textarea class="form-textarea" id="f_description" placeholder="填写流程的补充说明、注意事项等"></textarea>
-        </div>
-      </div>
+      <div class="form-group"><label>备注</label><textarea class="form-control" id="fRemark" rows="2"></textarea></div>
       <div class="form-actions">
-        <button type="button" class="btn-danger" onclick="closeModal()">取消</button>
-        <button type="submit" class="btn-primary">💾 保存</button>
+        <button class="btn-outline" onclick="closeAddModal()">取消</button>
+        <button class="btn-primary" onclick="saveRecord()">保存</button>
       </div>
-    </form>
-  </div>
-</div>
-
-<!-- DELETE CONFIRM -->
-<div class="confirm-overlay" id="confirmOverlay">
-  <div class="confirm-box">
-    <h3>确认删除</h3>
-    <p id="confirmText">确定要删除此流程记录吗？此操作不可恢复。</p>
-    <div class="confirm-actions">
-      <button class="btn-danger" onclick="closeConfirm()">取消</button>
-      <button class="btn-primary" id="confirmDeleteBtn" onclick="confirmDeleteFlow()">确认删除</button>
     </div>
   </div>
-</div>
 
-<script>
-// ============= DATA =============
-const STORAGE_KEY = 'flowDashboard_个税申报';
-let deleteTargetId = null;
-let currentSortKey = '';
-let currentSortDir = 'asc';
-let stageChartInstance = null;
-let countryChartInstance = null;
+  <!-- KPI Detail Modal -->
+  <div class="modal-overlay" id="kpiDetailModal">
+    <div class="modal">
+      <button class="close" onclick="closeKpiDetailModal()">✕</button>
+      <h3 id="kpiModalTitle">指标详情</h3>
+      <div id="kpiModalBody"></div>
+    </div>
+  </div>
 
-const DEFAULT_DATA = [
-  { id: genId(), title:'2025年度日本雇主侧个税申报', flowType:'雇主侧申报', stage:'进行中', priority:'高', creator:'王哲颢', createTime:'2025-12-01', deadline:'2026-02-15', completeTime:'', country:'日本', company:'京东日本', employeeName:'张山', handler:'国际薪酬组核算专员', supplier:'', description:'日本雇主年度申报，需在2月底前完成申报提交' },
-  { id: genId(), title:'荷兰外派员工2024年度个税申报', flowType:'外派员工年度申报', stage:'进行中', priority:'高', creator:'李思', createTime:'2025-11-15', deadline:'2026-03-31', completeTime:'', country:'荷兰', company:'京东荷兰', employeeName:'赵岩', handler:'外派算薪专员', supplier:'XX税务服务商', description:'荷兰外派员工年度个税申报，涉及多名外派员工' },
-  { id: genId(), title:'英国雇主侧年度个税申报准备', flowType:'雇主侧申报', stage:'待启动', priority:'中', creator:'王哲颢', createTime:'2025-12-10', deadline:'2026-04-30', completeTime:'', country:'英国', company:'京东英国', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'', description:'英国年度雇主申报，提前启动准备工作' },
-  { id: genId(), title:'德国外派员工个税申报材料整理', flowType:'外派员工年度申报', stage:'待启动', priority:'中', creator:'李思', createTime:'2025-12-05', deadline:'2026-05-31', completeTime:'', country:'德国', company:'京东德国', employeeName:'陈武', handler:'外派COE', supplier:'XX税务服务商', description:'收集德国外派员工薪酬及福利数据' },
-  { id: genId(), title:'新加坡雇主侧个税申报已完结', flowType:'雇主侧申报', stage:'已完成', priority:'低', creator:'王哲颢', createTime:'2025-10-01', deadline:'2025-12-31', completeTime:'2025-12-20', country:'新加坡', company:'京东新加坡', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'算薪供应商', description:'已提交新加坡雇主年度申报并获取完税凭证' },
-  { id: genId(), title:'法国外派员工年度个税申报', flowType:'外派员工年度申报', stage:'异常', priority:'高', creator:'李思', createTime:'2025-11-20', deadline:'2026-02-28', completeTime:'', country:'法国', company:'京东法国', employeeName:'刘海', handler:'外派算薪专员', supplier:'XX税务服务商', description:'员工薪酬数据不完整，需补充非现金福利数据' },
-  { id: genId(), title:'韩国雇主侧个税数据核查', flowType:'雇主侧申报', stage:'进行中', priority:'中', creator:'王哲颢', createTime:'2025-12-08', deadline:'2026-03-15', completeTime:'', country:'韩国', company:'京东韩国', employeeName:'全员', handler:'国际薪酬组核算专员', supplier:'三方代雇供应商', description:'核查三方供应商发来的申报表金额与发薪金额一致性' },
-  { id: genId(), title:'澳大利亚外派员工个税申报', flowType:'外派员工年度申报', stage:'已完成', priority:'低', creator:'李思', createTime:'2025-09-15', deadline:'2025-11-30', completeTime:'2025-11-25', country:'澳大利亚', company:'京东澳洲', employeeName:'杨明', handler:'外派算薪专员', supplier:'XX税务服务商', description:'已完成税务申报及付款，台账已更新' },
-];
-
-function genId(){return Date.now().toString(36)+Math.random().toString(36).substring(2,8)}
-
-function loadData(){
-  let raw=localStorage.getItem(STORAGE_KEY);
-  if(!raw){localStorage.setItem(STORAGE_KEY,JSON.stringify(DEFAULT_DATA));return DEFAULT_DATA}
-  try{return JSON.parse(raw)}catch(e){return DEFAULT_DATA}
-}
-function saveData(data){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
-
-function getAllData(){return loadData()}
-
-// ============= FILTER & SORT =============
-function getFilteredData(){
-  let data=getAllData();
-  let t=document.getElementById('filterType').value;
-  let s=document.getElementById('filterStage').value;
-  let p=document.getElementById('filterPriority').value;
-  let q=document.getElementById('filterSearch').value.toLowerCase().trim();
-  return data.filter(d=>{
-    if(t&&d.flowType!==t)return false;
-    if(s&&d.stage!==s)return false;
-    if(p&&d.priority!==p)return false;
-    if(q&&!d.title.toLowerCase().includes(q))return false;
-    return true;
-  });
-}
-
-function sortTable(key){
-  if(currentSortKey===key)currentSortDir=currentSortDir==='asc'?'desc':'asc';
-  else{currentSortKey=key;currentSortDir='asc'}
-  renderAll();
-}
-
-function applySort(data){
-  if(!currentSortKey)return data;
-  return[...data].sort((a,b)=>{
-    let va=a[currentSortKey]||'',vb=b[currentSortKey]||'';
-    if(currentSortKey==='deadline'||currentSortKey==='createTime'){va=va||'9999-12-31';vb=vb||'9999-12-31'}
-    let r=String(va).localeCompare(String(vb),'zh');
-    return currentSortDir==='asc'?r:-r;
-  });
-}
-
-// ============= RENDER =============
-function renderAll(){
-  let filtered=getFilteredData();
-  renderKPI(filtered);
-  renderKanban(filtered);
-  renderTable(filtered);
-  renderCharts(filtered);
-}
-
-function renderKPI(data){
-  let total=data.length;
-  let progress=data.filter(d=>d.stage==='进行中').length;
-  let done=data.filter(d=>d.stage==='已完成').length;
-  let exc=data.filter(d=>d.stage==='异常').length;
-  animateNumber('kpiTotal',total);
-  animateNumber('kpiInProgress',progress);
-  animateNumber('kpiCompleted',done);
-  animateNumber('kpiException',exc);
-}
-
-function animateNumber(id,target){
-  let el=document.getElementById(id);
-  let current=parseInt(el.textContent)||0;
-  if(current===target){el.textContent=target;return}
-  let step=Math.max(1,Math.ceil(Math.abs(target-current)/20));
-  let dir=target>current?1:-1;
-  let val=current;
-  let timer=setInterval(()=>{
-    val+=dir*step;
-    if(dir>0&&val>=target||dir<0&&val<=target){val=target;clearInterval(timer)}
-    el.textContent=val;
-  },30);
-}
-
-function renderKanban(data){
-  const stages=['待启动','进行中','已完成','异常'];
-  stages.forEach(s=>{
-    let col=document.getElementById('col_'+s);
-    let cnt=document.getElementById('count_'+s);
-    let items=data.filter(d=>d.stage===s);
-    cnt.textContent=items.length;
-    col.innerHTML=items.map(d=>`
-      <div class="kanban-card">
-        <div class="kc-header">
-          <div class="kc-title">${escHtml(d.title)}</div>
-          <span class="badge ${d.priority==='高'?'badge-high':d.priority==='中'?'badge-mid':'badge-low'}">${d.priority}</span>
-        </div>
-        <div class="kc-type"><span class="badge ${d.flowType==='雇主侧申报'?'badge-employer':'badge-expat'}">${d.flowType}</span></div>
-        <div class="kc-meta">
-          <span>🏷 ${escHtml(d.country||'-')}</span>
-          <span>👤 ${escHtml(d.handler||'-')}</span>
-          <span>📅 ${d.deadline||'-'}</span>
-        </div>
-        <div class="kc-actions">
-          <button class="btn-text" onclick="openEditModal('${d.id}')">编辑</button>
-          <button class="btn-text" onclick="showDeleteConfirm('${d.id}')" style="color:var(--chart-danger)">删除</button>
-        </div>
+  <!-- Delete Confirm -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal delete-modal">
+      <h3>确认删除</h3>
+      <p id="deleteMsg">确定要删除这条记录吗？</p>
+      <div class="btn-group">
+        <button class="btn-outline" onclick="closeDeleteModal()">取消</button>
+        <button class="btn-primary" onclick="confirmDelete()">确认删除</button>
       </div>
-    `).join('');
-  });
-}
+    </div>
+  </div>
 
-function renderTable(data){
-  let sorted=applySort(data);
-  let tbody=document.getElementById('tableBody');
-  if(sorted.length===0){
-    tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="icon">📭</div><p>暂无匹配的流程记录，点击右上角「新增流程」添加</p></div></td></tr>';
-    return;
-  }
-  tbody.innerHTML=sorted.map(d=>`
-    <tr>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(d.title)}">${escHtml(d.title)}</td>
-      <td><span class="badge ${d.flowType==='雇主侧申报'?'badge-employer':'badge-expat'}">${d.flowType==='雇主侧申报'?'雇主':'外派'}</span></td>
-      <td><span class="badge ${d.priority==='高'?'badge-high':d.priority==='中'?'badge-mid':'badge-low'}">${d.priority}</span></td>
-      <td><span class="badge ${d.stage==='已完成'?'badge-done':d.stage==='异常'?'badge-exception':d.stage==='进行中'?'badge-progress':'badge-start'}">${d.stage}</span></td>
-      <td>${escHtml(d.handler||'-')}</td>
-      <td style="font-size:12px;color:${d.deadline?((d.stage!=='已完成'&&new Date(d.deadline)<new Date())?'var(--chart-danger)':'var(--grey-2)'):'var(--grey-3)'}">${d.deadline||'-'}</td>
-      <td>
-        <button class="btn-text" onclick="openEditModal('${d.id}')">编辑</button>
-        <button class="btn-text" onclick="showDeleteConfirm('${d.id}')" style="color:var(--chart-danger)">删除</button>
-      </td>
-    </tr>
-  `).join('');
-}
+  <script>
+    // ============== DATA ==============
+    const STORAGE_KEY = 'flowDashboard_probation';
+    let records = [], filteredRecords = [];
+    let currentMetricRows = [];
+    let currentMetrics = null;
+    let deleteTargetId = null, editTargetId = null;
+    let activeTab = 'flow';
 
-function renderCharts(data){
-  // Stage distribution
-  const stages=['待启动','进行中','已完成','异常'];
-  const stageCounts=stages.map(s=>data.filter(d=>d.stage===s).length);
-  const stageColors=['#185DD3','#42A5F5','#34C759','#FF3B30'];
+    const DEFAULT_RECORDS = [
+      {id:'R001',employeeName:'Lai Phuong Anh',employeeId:'phuonganh.lai',employeeType:'提前转正',department:'Vietnam Business Department',region:'Vietnam',directManager:'Kai Huang',indirectManager:'Peter Chen',hrbp:'Nguyen Queenie',startDate:'2025-09-24',endDate:'2025-12-23',currentStage:'触发转正提醒',status:'进行中',createTime:'2025-09-24',completeTime:'',remark:'Supply Chain Operations'},
+      {id:'R002',employeeName:'惠汶萱',employeeId:'wenxuan.hui',employeeType:'O序列',department:'JD Worldwide HR Department',region:'France',directManager:'Annie Ji',indirectManager:'Pang Zhang',hrbp:'Selin Liu',startDate:'2025-09-22',endDate:'2025-12-21',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-22',completeTime:'2025-12-11',remark:'HR Business Partner'},
+      {id:'R003',employeeName:'Andre Youn',employeeId:'andre.youn',employeeType:'非O序列',department:'Fulfillment Supply Chain Team',region:'Brazil',directManager:'Will Ni',indirectManager:'Chad Gao',hrbp:'Alice Fon',startDate:'2025-09-22',endDate:'2025-12-21',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-22',completeTime:'2025-12-11',remark:'Supply Chain Operations'},
+      {id:'R004',employeeName:'王珊珊',employeeId:'shanshan.wang.1',employeeType:'非O序列',department:'Operation Improvement Team',region:'Netherlands',directManager:'Vatti Yang',indirectManager:'Owen Zhao',hrbp:'Adlw Liu',startDate:'2025-09-25',endDate:'2025-12-24',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-25',completeTime:'2025-12-14',remark:'Logistics Operations Support'},
+      {id:'R005',employeeName:'NARUTH TEERAMUNGCALANON',employeeId:'naruth.teeramungcalanon',employeeType:'O序列',department:'Thailand Direct Sourcing Team',region:'Thailand',directManager:'David Chen',indirectManager:'Vincent Yang',hrbp:'Ziyi Zhang',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Category Manager'},
+      {id:'R006',employeeName:'胡斌',employeeId:'hubin.jimmy',employeeType:'O序列',department:'销售拓展组',region:'Japan',directManager:'Joshua Ma',indirectManager:'Kun Zhao',hrbp:'Haiyue Xiu',startDate:'2025-09-26',endDate:'2025-12-25',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-26',completeTime:'2025-12-15',remark:'Sales'},
+      {id:'R007',employeeName:'韓寶光',employeeId:'hanpokwong.1',employeeType:'O序列',department:'Hong Kong Kwai Tsing Operation Center',region:'Hong Kong',directManager:'Tong Cheng',indirectManager:'Wei Ma',hrbp:'Celine Dong',startDate:'2025-09-25',endDate:'2025-12-24',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-25',completeTime:'2025-12-14',remark:'Vehicle Courier'},
+      {id:'R008',employeeName:'Shaik Shanim',employeeId:'shaik.shanim',employeeType:'非O序列',department:'Enterprise IT Division',region:'United Arab Emirates',directManager:'Weiwei Zeng',indirectManager:'Sam Yu',hrbp:'Yiming Wang',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'审批转正意见',status:'进行中',createTime:'2025-09-29',completeTime:'',remark:'Operations Engineer'},
+      {id:'R009',employeeName:'BUI DIEP THANH HUYEN',employeeId:'diepthanhhuyen.bui',employeeType:'提前转正',department:'胡志明市业务组',region:'Vietnam',directManager:'Wilson Qin',indirectManager:'Kai Huang',hrbp:'Nguyen Queenie',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Operations Manager'},
+      {id:'R010',employeeName:'Sarah Abdelkader Said',employeeId:'sarah.abdelkadersaid',employeeType:'O序列',department:'International Talent Acquisition Team',region:'United Arab Emirates',directManager:'Curtis Ren',indirectManager:'Annie Ji',hrbp:'Selin Liu',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Middle East Regional TA Director'},
+      {id:'R011',employeeName:'廖旌銘',employeeId:'liusingming.1',employeeType:'O序列',department:'短途运力部',region:'Hong Kong',directManager:'Dequan Tan [C]',indirectManager:'Wei Ma',hrbp:'Celine Dong',startDate:'2025-09-26',endDate:'2025-12-25',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-26',completeTime:'2025-12-15',remark:'Transfer Driver'},
+      {id:'R012',employeeName:'Joe Jian Yee',employeeId:'joejian.yee',employeeType:'O序列',department:'Malaysia Kuala Lumpur Small and Medium Items Warehouse No.2',region:'Malaysia',directManager:'Jef Li',indirectManager:'Evan Xue',hrbp:'Fiona Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'沟通转正事宜',status:'延期',createTime:'2025-09-29',completeTime:'',remark:'Exception Handling'},
+      {id:'R013',employeeName:'Stephanie Mcleod',employeeId:'stephanie.mcleod',employeeType:'O序列',department:'Luton Delivery Station',region:'United Kingdom',directManager:'Shane Mulholland',indirectManager:'Shane Mulholland',hrbp:'Alina Danuta Nikiel',startDate:'2025-09-23',endDate:'2025-12-22',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-23',completeTime:'2025-12-12',remark:'Delivery Station Supervisor'},
+      {id:'R014',employeeName:'王苏杭',employeeId:'wangsuhang.shawn',employeeType:'O序列',department:'Japan Tokyo Small and Medium Items Warehouse No.1',region:'Japan',directManager:'Fan Fan',indirectManager:'Evan Xue',hrbp:'Haiyue Xiu',startDate:'2025-09-24',endDate:'2025-12-23',currentStage:'不予转正',status:'不予转正',createTime:'2025-09-24',completeTime:'',remark:'Outbound Supervisor'},
+      {id:'R015',employeeName:'Shireen Nandigam',employeeId:'shireen.nandigam',employeeType:'提前转正',department:'New Star Team',region:'United Kingdom',directManager:'Sicong Lu',indirectManager:'Sicong Lu',hrbp:'Jimmy Shi',startDate:'2025-09-24',endDate:'2025-12-23',currentStage:'办理转正手续',status:'进行中',createTime:'2025-09-24',completeTime:'',remark:'JD Vanguard'},
+      {id:'R016',employeeName:'伍遨晴',employeeId:'wuaoqing.celeste',employeeType:'提前转正',department:'French BP Team',region:'United Kingdom',directManager:'Simon Han',indirectManager:'Simon Han',hrbp:'Ellie Li',startDate:'2025-09-24',endDate:'2025-12-23',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-24',completeTime:'2025-12-13',remark:'Marketing-Operations'},
+      {id:'R017',employeeName:'Madeline Sutiono',employeeId:'madeline.evangeline',employeeType:'提前转正',department:'No.1 Small and Medium Item Warehouse in Birmingham, UK',region:'United Kingdom',directManager:'Qingyang Song',indirectManager:'Sicong Lu',hrbp:'Christine Huang',startDate:'2025-09-25',endDate:'2025-12-24',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-25',completeTime:'2025-12-14',remark:'Warehouse Quality Control'},
+      {id:'R018',employeeName:'Hamza Ahmed',employeeId:'hamza.ahmed',employeeType:'非O序列',department:'Delivery Operations Team',region:'United Kingdom',directManager:'Rui Ke',indirectManager:'Rui Ke',hrbp:'Adlw Liu',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'已离职',status:'已离职',createTime:'2025-09-29',completeTime:'',remark:'Hub Sorting Operations'},
+      {id:'R019',employeeName:'李嘉仪',employeeId:'lijiayi.1',employeeType:'非O序列',department:'Customer Operations Team',region:'Germany',directManager:'Stephen Zhao',indirectManager:'Julian Madsen',hrbp:'Shujie Qi',startDate:'2025-09-26',endDate:'2025-12-25',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-26',completeTime:'2025-12-15',remark:'Account Manager (Logistics)'},
+      {id:'R020',employeeName:'Mirza Dilshad Hussain',employeeId:'mirzadilshad.hussain',employeeType:'O序列',department:'Customized Warehouse No. 8 in Dubai, UAE',region:'United Arab Emirates',directManager:'Cheng Liu',indirectManager:'Charlie Peng',hrbp:'Grace Xie',startDate:'2025-09-26',endDate:'2025-12-25',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-26',completeTime:'2025-12-15',remark:'Quality Controller'},
+      {id:'R021',employeeName:'宋朋',employeeId:'songpeng.29',employeeType:'非O序列',department:'Products and Solutions Department',region:'Netherlands',directManager:'Lena Li',indirectManager:'Rui Ke',hrbp:'Shujie Qi',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'System Support'},
+      {id:'R022',employeeName:'潘志豪',employeeId:'poonchiho.1',employeeType:'O序列',department:'Hong Kong Kwai Tsing Operation Center',region:'Hong Kong',directManager:'Tong Cheng',indirectManager:'Wei Ma',hrbp:'Celine Dong',startDate:'2025-09-26',endDate:'2025-12-25',currentStage:'合议转正意见',status:'进行中',createTime:'2025-09-26',completeTime:'',remark:'Vehicle Courier'},
+      {id:'R023',employeeName:'谭文妍',employeeId:'',employeeType:'非O序列',department:'European Online Retail HRBP Team',region:'France',directManager:'Ellie Li',indirectManager:'Annie Ji',hrbp:'Selin Liu',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'沟通转正事宜',status:'延期',createTime:'2025-09-29',completeTime:'',remark:'Administrative Professional'},
+      {id:'R024',employeeName:'Jimmy Payet',employeeId:'jimmy.payet',employeeType:'非O序列',department:'JDL European HRBP Team',region:'France',directManager:'Jimmy Shi',indirectManager:'Annie Ji',hrbp:'Selin Liu',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'HR Business Partner'},
+      {id:'R025',employeeName:'Aphiradee Frere',employeeId:'aphiradee.frere',employeeType:'非O序列',department:'World Food Team',region:'France',directManager:'Daniel Zheng',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Category Manager'},
+      {id:'R026',employeeName:'Venise Cabon',employeeId:'venise.cabon',employeeType:'O序列',department:'Operation Associate Team',region:'France',directManager:'Daniel Zheng',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Inventory Management'},
+      {id:'R027',employeeName:'Rachid Mediouni',employeeId:'rachid.mediouni',employeeType:'非O序列',department:'Transport Operations Team',region:'France',directManager:'Jasper Jiang',indirectManager:'Leo Shi',hrbp:'Hassina Amaouche',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'不予转正',status:'不予转正',createTime:'2025-10-01',completeTime:'',remark:'Transportation Operations'},
+      {id:'R028',employeeName:'Jules Le Mouel',employeeId:'jules.lemouel',employeeType:'非O序列',department:'FSN/Sports/Health/Pet Team',region:'France',directManager:'Daniel Zheng',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Category Manager'},
+      {id:'R029',employeeName:'顾成真',employeeId:'guchengzhen.stephen',employeeType:'非O序列',department:'Operation Improvement Team',region:'United Kingdom',directManager:'Sicong Lu',indirectManager:'Sicong Lu',hrbp:'Alina Danuta Nikiel',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'沟通转正事宜',status:'进行中',createTime:'2025-09-29',completeTime:'',remark:'Lean Improvement'},
+      {id:'R030',employeeName:'吴亦丰',employeeId:'wuyifeng.0929',employeeType:'非O序列',department:'Products and Solutions Department',region:'Germany',directManager:'Lena Li',indirectManager:'Rui Ke',hrbp:'Shujie Qi',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Solutions'},
+      {id:'R031',employeeName:'Annemieke Kleij',employeeId:'annemieke.kleij',employeeType:'非O序列',department:'Benelux BP Team',region:'Netherlands',directManager:'Simon Han',indirectManager:'Simon Han',hrbp:'Ellie Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Marketing-Operations'},
+      {id:'R032',employeeName:'徐家豪',employeeId:'jiahaoxu.1',employeeType:'O序列',department:'Macau Xiehua Industrial Building Delivery Station',region:'Macao',directManager:'Bowen Ding',indirectManager:'Wei Ma',hrbp:'Celine Dong',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Transport Driver'},
+      {id:'R033',employeeName:'AURELIE MURIEL ESSOME MBENDA',employeeId:'aureliemuriel.essomembenda',employeeType:'O序列',department:'New Star Team',region:'France',directManager:'Leo Shi',indirectManager:'Leo Shi',hrbp:'Ceci Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'JD Vanguard'},
+      {id:'R034',employeeName:'谭文妍',employeeId:'tanwenyan.29',employeeType:'非O序列',department:'European Online Retail HRBP Team',region:'France',directManager:'Ellie Li',indirectManager:'Annie Ji',hrbp:'Selin Liu',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'沟通转正事宜',status:'延期',createTime:'2025-09-29',completeTime:'',remark:'Administrative Professional'},
+      {id:'R035',employeeName:'Ines Dehbi Bghiel',employeeId:'ines.dehbibghiel',employeeType:'O序列',department:'New Star Team',region:'France',directManager:'Leo Shi',indirectManager:'Leo Shi',hrbp:'Ceci Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'已离职',status:'已离职',createTime:'2025-09-29',completeTime:'',remark:'JD Vanguard'},
+      {id:'R036',employeeName:'Alexandre Aniambossou',employeeId:'alexandre.aniambossou',employeeType:'非O序列',department:'FSN/Sports/Health/Pet Team',region:'France',directManager:'Daniel Zheng',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'触发转正提醒',status:'进行中',createTime:'2025-10-01',completeTime:'',remark:'Category Manager'},
+      {id:'R037',employeeName:'Asmae BOUA',employeeId:'asmae.boua',employeeType:'O序列',department:'New Star Team',region:'France',directManager:'Leo Shi',indirectManager:'Leo Shi',hrbp:'Ceci Li',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'JD Vanguard'},
+      {id:'R038',employeeName:'Ouiam Alla',employeeId:'ouian.alla',employeeType:'非O序列',department:'Melun Delivery Station',region:'France',directManager:'Yaxin Liu',indirectManager:'Leo Shi',hrbp:'Hassina Amaouche',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Deputy Station Manager'},
+      {id:'R039',employeeName:'王子铭',employeeId:'wangziming.1001',employeeType:'O序列',department:'Transport Operations Team',region:'France',directManager:'Jasper Jiang',indirectManager:'Leo Shi',hrbp:'Hassina Amaouche',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Transportation Operations'},
+      {id:'R040',employeeName:'Veronica Duong',employeeId:'veronica.duong',employeeType:'非O序列',department:'Home Appliances Team',region:'United Kingdom',directManager:'Grant Ma',indirectManager:'Matthew Nobbs',hrbp:'Ellie Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'不予转正',status:'不予转正',createTime:'2025-09-29',completeTime:'',remark:'Category Manager'},
+      {id:'R041',employeeName:'冯佳诚',employeeId:'fengjiacheng.0929',employeeType:'O序列',department:'New Star Team',region:'United Kingdom',directManager:'Sicong Lu',indirectManager:'Sicong Lu',hrbp:'Jimmy Shi',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'JD Vanguard'},
+      {id:'R042',employeeName:'刘辉',employeeId:'liuhui.nic',employeeType:'提前转正',department:'Service Product Team',region:'United Kingdom',directManager:'Leon Li',indirectManager:'Caitlyn Li',hrbp:'Junyi Jiang',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Service Operations'},
+      {id:'R043',employeeName:'王晞',employeeId:'wangxi.sharon',employeeType:'提前转正',department:'Personal Care/Baby/Toys Team',region:'United Kingdom',directManager:'James Gowing',indirectManager:'Matthew Nobbs',hrbp:'Ellie Li',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'审批转正意见',status:'进行中',createTime:'2025-09-29',completeTime:'',remark:'Category Assistant'},
+      {id:'R044',employeeName:'程艺鹏',employeeId:'chengyipeng.0929',employeeType:'O序列',department:'New Star Team',region:'Germany',directManager:'Stephen Zhao',indirectManager:'Stephen Zhao',hrbp:'Jinghan Ding',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'JD Vanguard'},
+      {id:'R045',employeeName:'Karolis Dapkus',employeeId:'karolis.dapkus',employeeType:'非O序列',department:'Delivery Station Rotterdam Schiedam',region:'Netherlands',directManager:'Joydeep Paul',indirectManager:'Joydeep Paul',hrbp:'Mannan Chen',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'沟通转正事宜',status:'延期',createTime:'2025-09-29',completeTime:'',remark:'Delivery Station Supervisor'},
+      {id:'R046',employeeName:'Junoo Cheong',employeeId:'junoo.cheong',employeeType:'O序列',department:'FSN/Sports/Health/Pet Team',region:'France',directManager:'Daniel Zheng',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Category Manager'},
+      {id:'R047',employeeName:'植明敏',employeeId:'zhimingmin.1001',employeeType:'O序列',department:'Home Living Team',region:'France',directManager:'Harman J. Singh',indirectManager:'Daniel Zheng',hrbp:'Xiaodan Li',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Category Manager'},
+      {id:'R048',employeeName:'Anna Stepaniuk',employeeId:'anna.stepaniuk',employeeType:'O序列',department:'Warehouse No.2 for small and medium-sized items in Warsaw, Poland',region:'Poland',directManager:'Hubert Song',indirectManager:'Stephen Zhao',hrbp:'Magdalena Sikorska',startDate:'2025-10-01',endDate:'2025-12-30',currentStage:'归档转正材料',status:'已完成',createTime:'2025-10-01',completeTime:'2025-12-20',remark:'Operator'},
+      {id:'R049',employeeName:'朱健东',employeeId:'chukintung.david',employeeType:'O序列',department:'深圳冰洗组',region:'Hong Kong',directManager:'Bin Chen',indirectManager:'Bin Chen',hrbp:'Panpan Fu',startDate:'2025-09-29',endDate:'2025-12-28',currentStage:'归档转正材料',status:'已完成',createTime:'2025-09-29',completeTime:'2025-12-18',remark:'Category Manager'},
+      {id:'R050',employeeName:'Ismail Zarou',employeeId:'ismail.zarou',employeeType:'O序列',department:'New Star Team',region:'France',directManager:'Leo Shi',indirectManager:'Leo Shi',hrbp:'Ceci Li',startDate:'2025-10-06',endDate:'2026-01-04',currentStage:'办理转正手续',status:'进行中',createTime:'2025-10-06',completeTime:'',remark:'JD Vanguard'}
+    ];
 
-  if(stageChartInstance)stageChartInstance.destroy();
-  let ctx=document.getElementById('stageChart').getContext('2d');
-  stageChartInstance=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:stages,
-      datasets:[{
-        label:'流程数量',
-        data:stageCounts,
-        backgroundColor:stageColors,
-        borderRadius:4,
-        barPercentage:0.6
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{
-        legend:{display:false},
-        tooltip:{backgroundColor:'#202D3F',titleFont:{size:12},bodyFont:{size:12},cornerRadius:8,padding:10}
-      },
-      scales:{
-        y:{beginAtZero:true,ticks:{font:{size:12},color:'#8C96A5'},grid:{color:'#EDF1F5',dash:[3,3]}},
-        x:{ticks:{font:{size:12},color:'#5A6778'},grid:{display:false}}
+    const DATA_VERSION = 'v2_50records';
+    function initData() {
+      let stored = localStorage.getItem(STORAGE_KEY);
+      let storedVersion = localStorage.getItem(STORAGE_KEY + '_version');
+      if (stored && storedVersion === DATA_VERSION) {
+        records = JSON.parse(stored);
+      } else {
+ records = JSON.parse(JSON.stringify(DEFAULT_RECORDS));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        localStorage.setItem(STORAGE_KEY + '_version', DATA_VERSION);
       }
+      renderAll();
     }
-  });
 
-  // Country distribution
-  let countryMap={};
-  data.forEach(d=>{if(d.country){countryMap[d.country]=(countryMap[d.country]||0)+1}});
-  let countries=Object.keys(countryMap);
-  let countryVals=Object.values(countryMap);
-  const countryColors=['#185DD3','#42A5F5','#00BFA5','#7C4DFF','#FF9500','#34C759','#FF3B30','#64B5F6','#90CAF9','#BBDEFB'].slice(0,countries.length);
+    // ============== METRICS COMPUTATION ==============
+    function groupCount(rows, field) {
+      const m = {};
+      rows.forEach(r => { const k = r[field] || '未知'; m[k] = (m[k] || 0) + 1; });
+      return m;
+    }
 
-  if(countryChartInstance)countryChartInstance.destroy();
-  let ctx2=document.getElementById('countryChart').getContext('2d');
-  countryChartInstance=new Chart(ctx2,{
-    type:'doughnut',
-    data:{
-      labels:countries,
-      datasets:[{
-        data:countryVals,
-        backgroundColor:countryColors,
-        borderWidth:0,
-        hoverOffset:6
-      }]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      cutout:'55%',
-      plugins:{
-        legend:{
-          position:'right',
-          labels:{
-            font:{size:12,family:'Microsoft YaHei'},
-            color:'#5A6778',
-            padding:12,
-            usePointStyle:true,
-            pointStyle:'circle'
-          }
-        },
-        tooltip:{
-          backgroundColor:'#202D3F',
-          titleFont:{size:12},
-          bodyFont:{size:12},
-          cornerRadius:8,
-          padding:10,
-          callbacks:{
-            label:function(ctx){return ctx.label+': '+ctx.parsed+' 条'}
-          }
+    function buildMonthlySeries(rows, valueBuilder) {
+      const buckets = {};
+      rows.forEach(r => {
+        const d = (r.createTime || '').slice(0, 7);
+        if (!d) return;
+        if (!buckets[d]) buckets[d] = [];
+        buckets[d].push(r);
+      });
+      return Object.keys(buckets).sort().map(m => ({ label: m, value: valueBuilder(buckets[m]) }));
+    }
+
+    function buildBarChart(data, color = 'var(--chart-primary)') {
+      const max = Math.max(1, ...data.map(d => d.value));
+     const w = 260, h = 120, pad = 18;
+      const bw = Math.max(14, Math.floor((w - pad * 2) / Math.max(1, data.length) - 6));
+      const bars = data.map((d, i) => {
+        const x = pad + i * (bw + 6);
+        const bh = Math.round((d.value / max) * 72);
+        const y = h - 26 - bh;
+        return `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="${color}" rx="2"></rect><text x="${x + bw / 2}" y="${h - 12}" text-anchor="middle" font-size="9" fill="#5A6778">${d.label.slice(0,4)}</text><text x="${x + bw / 2}" y="${Math.max(10, y - 4)}" text-anchor="middle" font-size="9" fill="#202D3F">${d.value}</text>`;
+      }).join('');
+      return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="140" role="img">${bars}</svg>`;
+    }
+
+    function buildLineChart(data) {
+      const w = 260, h = 120, pad = 20;
+      const max = Math.max(1, ...data.map(d => d.value));
+      const step = data.length > 1 ? (w - pad * 2) / (data.length - 1) : 0;
+      const points = data.map((d, i) => {
+        const x = pad + i * step;
+        const y = h - pad - (d.value / max) * (h - pad * 2);
+        return { x, y, label: d.label, value: d.value };
+      });
+      const path = points.map((p, i) => `${i ? 'L' : 'M'}${p.x},${p.y}`).join(' ');
+      const nodes = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--chart-primary)"></circle><text x="${p.x}" y="${h - 6}" text-anchor="middle" font-size="8" fill="#5A6778">${p.label.slice(5)}</text>`).join('');
+      return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="140" role="img"><path d="${path}" fill="none" stroke="var(--chart-primary)" stroke-width="2"></path>${nodes}</svg>`;
+    }
+
+    function buildPieChart(data) {
+      const total = Math.max(1, data.reduce((s, d) => s + d.value, 0));
+      const cx = 70, cy = 70, r = 48;
+      let start = -Math.PI / 2;
+      const colors = ['#FF9500', '#FF3B30', '#42A5F5', '#7C4DFF', '#00BFA5', '#185DD3'];
+      const slices = data.map((d, i) => {
+        const angle = (d.value / total) * Math.PI * 2;
+        const end = start + angle;
+        const x1 = cx + r * Math.cos(start), y1 = cy + r * Math.sin(start);
+        const x2 = cx + r * Math.cos(end), y2 = cy + r * Math.sin(end);
+        const largeArc = angle > Math.PI ? 1 : 0;
+        const pct = ((d.value / total) * 100).toFixed(1);
+        const mid = start + angle / 2;
+        const tx = cx + (r + 16) * Math.cos(mid), ty = cy + (r + 16) * Math.sin(mid);
+        const p = `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${colors[i % colors.length]}"></path><text x="${tx}" y="${ty}" font-size="9" fill="#202D3F" text-anchor="middle">${pct}%</text>`;
+        start = end;
+        return { svg: p, color: colors[i % colors.length], label: d.label, value: d.value, pct };
+      });
+      return {
+        svg: `<svg viewBox="0 0 160 140" width="100%" height="140" role="img">${slices.map(s => s.svg).join('')}</svg>`,
+        legend: slices
+      };
+    }
+
+    function getMetricDetailRows(metricKey, sourceRows, metricSnapshot) {
+      const rows = Array.isArray(sourceRows) ? sourceRows : [];
+      if (!rows.length) return [];
+
+      if (metricKey === 'delayRate') return rows.filter(r => r.status === '延期');
+      if (metricKey === 'rejectRate') return rows.filter(r => r.status === '不予转正' || r.status === '已离职');
+      if (metricKey === 'earlyRate') return rows.filter(r => r.employeeType === '提前转正');
+      if (metricKey === 'activeCount') return rows.filter(r => r.status === '进行中');
+      if (metricKey === 'onTimeRate') return rows.filter(r => r.status === '已完成');
+      if (metricKey === 'closureRate') return rows.filter(r => r.status === '延期' || r.status === '不予转正' || r.status === '已离职');
+
+      if (metricKey === 'topStageCount' || metricKey === 'topStage') {
+        const topStage = metricSnapshot?.topStage?.value;
+        if (!topStage || topStage === '—') return [];
+        return rows.filter(r => r.currentStage === topStage);
+      }
+
+      if (metricKey === 'avgProcessDays') {
+        return rows.filter(r => r.createTime && (r.completeTime || r.endDate));
+      }
+
+      if (metricKey === 'onlineRate') {
+        return rows.filter(r => r.createTime);
+      }
+
+      return rows;
+    }
+
+    function computeKpiMetrics(rows) {
+      const total = rows.length;
+      const active = rows.filter(r => r.status === '进行中').length;
+      const done = rows.filter(r => r.status === '已完成').length;
+      const delay = rows.filter(r => r.status === '延期').length;
+      const reject = rows.filter(r => r.status === '不予转正').length;
+      const early = rows.filter(r => r.employeeType === '提前转正').length;
+      const deptCount = groupCount(rows, 'department');
+      const stageCount = groupCount(rows, 'currentStage');
+      const stageList = Object.entries(stageCount).sort((a,b)=>b[1]-a[1]);
+
+      const durationByDept = {};
+      rows.forEach(r => {
+        if (!r.createTime || !(r.completeTime || r.endDate)) return;
+        const d = Math.max(0, (new Date(r.completeTime || r.endDate) - new Date(r.createTime)) / 86400000);
+        const dept = r.department || '未知';
+        if (!durationByDept[dept]) durationByDept[dept] = [];
+        durationByDept[dept].push(d);
+      });
+      const avgByDept = Object.entries(durationByDept).map(([k, v]) => ({ label: k, value: Number((v.reduce((a,b)=>a+b,0) / Math.max(1, v.length)).toFixed(1)) }));
+      const totalDays = avgByDept.reduce((s, d) => s + d.value, 0);
+      const avgDays = avgByDept.length ? (totalDays / avgByDept.length).toFixed(1) : '0';
+
+      const onTime = done > 0 ? ((done / (done + delay + reject)) * 100).toFixed(1) : '0';
+      const delayRate = total > 0 ? ((delay / total) * 100).toFixed(1) : '0';
+      const rejectRate = total > 0 ? ((reject / total) * 100).toFixed(1) : '0';
+      const earlyRate = total > 0 ? ((early / total) * 100).toFixed(1) : '0';
+      const onlineRate = total > 0 ? ((done / total) * 100).toFixed(1) : '0';
+
+      const abnormalRows = rows.filter(r => r.status === '延期' || r.status === '不予转正' || r.status === '已离职');
+      const abnormalDeptDist = Object.entries(groupCount(abnormalRows, 'department')).map(([k, v]) => ({ label: k, value: v }));
+
+      // 各饼图指标独立数据源
+      const closurePieData = Object.entries(groupCount(abnormalRows, 'department')).map(([k, v]) => ({ label: k, value: v }));
+      const delayRows = rows.filter(r => r.status === '延期');
+      const delayPieData = Object.entries(groupCount(delayRows, 'department')).map(([k, v]) => ({ label: k, value: v }));
+      const rejectRows = rows.filter(r => r.status === '不予转正' || r.status === '已离职');
+      const rejectPieData = Object.entries(groupCount(rejectRows, 'department')).map(([k, v]) => ({ label: k, value: v }));
+      const earlyRows = rows.filter(r => r.employeeType === '提前转正');
+      const earlyPieData = Object.entries(groupCount(earlyRows, 'department')).map(([k, v]) => ({ label: k, value: v }));
+      const onTimeAbnormal = rows.filter(r => r.status === '延期' || r.status === '不予转正');
+      const onTimePieData = Object.entries(groupCount(onTimeAbnormal, 'department')).map(([k, v]) => ({ label: k, value: v }));
+
+      return {
+        closureRate: { value: onTime, unit: '%', health: Number(onTime) >= 80 ? 'healthy' : 'warning', chartType: 'pie_abnormal', abnormalRate: (100 - Number(onTime)).toFixed(1), pieData: closurePieData },
+        avgProcessDays: { value: avgDays, unit: '天', health: Number(avgDays) <= 30 ? 'healthy' : Number(avgDays) <= 45 ? 'warning' : 'danger', chartType: avgByDept.length <= 10 ? 'bar_avg' : 'none', barData: avgByDept },
+        activeCount: { value: active, unit: '人', health: active <= 5 ? 'healthy' : active <= 10 ? 'warning' : 'danger', chartType: 'none' },
+        onTimeRate: { value: onTime, unit: '%', health: Number(onTime) >= 80 ? 'healthy' : 'warning', chartType: 'pie_abnormal', abnormalRate: (100 - Number(onTime)).toFixed(1), pieData: onTimePieData },
+        delayRate: { value: delayRate, unit: '%', health: Number(delayRate) <= 15 ? 'healthy' : 'warning', chartType: 'pie_abnormal', abnormalRate: delayRate, pieData: delayPieData },
+        rejectRate: { value: rejectRate, unit: '%', health: Number(rejectRate) <= 5 ? 'healthy' : 'warning', chartType: 'pie_abnormal', abnormalRate: rejectRate, pieData: rejectPieData },
+        earlyRate: { value: earlyRate, unit: '%', health: Number(earlyRate) <= 20 ? 'healthy' : 'warning', chartType: 'pie_abnormal', abnormalRate: earlyRate, pieData: earlyPieData },
+        onlineRate: { value: onlineRate, unit: '%', health: Number(onlineRate) >= 90 ? 'healthy' : 'warning', chartType: 'line_time', lineData: buildMonthlySeries(rows, mRows => Number(((mRows.filter(r => r.status === '已完成').length / Math.max(1, mRows.length)) * 100).toFixed(1))) },
+        topStage: { value: stageList.length ? stageList[0][0] : '—', unit: '', health: 'healthy', chartType: 'none' },
+        topStageCount: { value: stageList.length ? stageList[0][1] : 0, unit: '人', health: stageList.length && stageList[0][1] > 5 ? 'warning' : 'healthy', chartType: stageList.length <= 10 ? 'bar_max' : 'none', barData: stageList.map(([k,v]) => ({label:k,value:v})) },
+        _meta: { deptCount: Object.keys(deptCount).length, stageCount: stageList.length, deptDist: Object.entries(deptCount).map(([k,v]) => ({label:k,value:v})), abnormalDeptDist }
+      };
+    }
+
+    function buildCardChartHtml(card, metric, metrics) {
+      if (!metric || metric.chartType === 'none') return '';
+      if ((metric.chartType === 'bar_avg' || metric.chartType === 'bar_max') && (!metric.barData || metric.barData.length > 10)) return '';
+      if (metric.chartType === 'line_time' && (!metric.lineData || metric.lineData.length < 2)) return '';
+
+      if (metric.chartType === 'bar_avg' || metric.chartType === 'bar_max') {
+        const svg = buildBarChart(metric.barData);
+        const list = metric.barData.map(d => `<li>${d.label}: ${d.value}${metric.chartType==='bar_avg'?'天':'人'}</li>`).join('');
+        return `<div class="chart-wrap"><div class="chart-title">${metric.chartType==='bar_avg'?'类目均值柱状图':'类目极值柱状图'}（类目数≤10）</div>${svg}<ul class="mini-list">${list}</ul><div class="chart-legend"><span class="legend-item"><span class="legend-dot" style="background:var(--chart-primary)"></span>${metric.chartType==='bar_avg'?'平均耗时(天)':'人数'}</span></div><div class="chart-caption">图注：来源于流程明细数据按类目聚合计算。</div></div>`;
+      }
+
+      if (metric.chartType === 'line_time') {
+        const svg = buildLineChart(metric.lineData);
+        return `<div class="chart-wrap"><div class="chart-title">时间趋势折线图</div>${svg}<div class="chart-legend"><span class="legend-item"><span class="legend-dot" style="background:var(--chart-primary)"></span>完成率(%)</span></div><div class="chart-caption">图注：按月聚合，数据来源于流程明细表 createTime。</div></div>`;
+      }
+
+      if (metric.chartType === 'pie_abnormal') {
+        const dist = (metric.pieData && metric.pieData.length)
+          ? metric.pieData
+          : [];
+        if (!dist.length) {
+          return `<div class="chart-wrap"><div class="chart-title">异常数据来源占比饼图</div><div class="empty-state" style="margin:8px 0">当前筛选下无异常明细，暂不绘图</div><div class="chart-caption">图注：仅抽取异常部分；正常数据不入图。</div></div>`;
+        }
+        const pie = buildPieChart(dist.slice(0, 6));
+        const legend = pie.legend.map(l => `<span class="legend-item"><span class="legend-dot" style="background:${l.color}"></span>${l.label} ${l.pct}%</span>`).join('');
+        return `<div class="chart-wrap"><div class="chart-title">异常数据来源占比饼图（仅异常部分 ${metric.abnormalRate}%）</div>${pie.svg}<div class="chart-legend">${legend}</div><div class="chart-caption">图注：仅抽取异常部分；正常数据不入图。数据来源于明细表按部门聚合。</div></div>`;
+      }
+      return '';
+    }
+
+    function renderKpiCards(metrics) {
+      const noChartGrid = document.getElementById('kpiNoChartGrid');
+      const chartGrid = document.getElementById('kpiChartGrid');
+      noChartGrid.innerHTML = '';
+      chartGrid.innerHTML = '';
+
+      const cards = [
+        {label:'转正风险闭环及时率',key:'closureRate',desc:'已转正/应转正'},
+        {label:'平均流程耗时(天)',key:'avgProcessDays',desc:'从发起到完成'},
+        {label:'在办员工数',key:'activeCount',desc:'当前进行中'},
+        {label:'按期转正率',key:'onTimeRate',desc:'已转正/总人数'},
+        {label:'延期转正率',key:'delayRate',desc:'延期/总人数'},
+        {label:'不予转正率',key:'rejectRate',desc:'不适岗'},
+        {label:'提前转正占比',key:'earlyRate',desc:'提前/总人数'},
+        {label:'转正流程线上化率',key:'onlineRate',desc:'按月趋势'},
+        {label:'TOP环节在办人数',key:'topStageCount',desc:'最拥挤环节'},
+        {label:'最卡点环节',key:'topStage',desc:'耗时最长'}
+      ];
+
+      cards.forEach(c => {
+        const m = metrics[c.key];
+        const healthLabel = {healthy:'健康',warning:'预警',danger:'风险'};
+        const badgeClass = m.health || 'healthy';
+        const chartHtml = buildCardChartHtml(c, m, metrics);
+        const card = document.createElement('div');
+        card.className = `metric-card ${chartHtml ? 'has-chart' : ''}`;
+        card.onclick = () => openKpiDetail(c.key);
+        card.innerHTML = `<div class="label">${c.label}</div><div class="value">${m.value}<span class="unit">${m.unit}</span></div><div class="sub">${c.desc}</div><span class="health-badge ${badgeClass}">● ${healthLabel[badgeClass] || '—'}</span>${chartHtml}`;
+        (chartHtml ? chartGrid : noChartGrid).appendChild(card);
+      });
+    }
+
+    // ============== RENDER TABLES ==============
+    function renderFlowTable(rows) {
+      const el = document.getElementById('flowTable');
+      el.style.display = '';
+      document.getElementById('riskTable').style.display = 'none';
+      document.getElementById('stageTable').style.display = 'none';
+      if (!rows.length) { el.innerHTML = '<div class="empty-state">暂无匹配记录</div>'; return; }
+      let html = `<table><thead><tr><th>员工姓名</th><th>类型</th><th>部门</th><th>直接管理者</th><th>HRBP</th><th>当前环节</th><th>状态</th><th>发起时间</th><th>操作</th></tr></thead><tbody>`;
+      rows.slice(0,12).forEach(r => {
+        const st = { '进行中':'progress','已完成':'done','延期':'delay','不予转正':'reject','已离职':'reject' };
+        html += `<tr><td>${r.employeeName}</td><td>${r.employeeType}</td><td>${r.department}</td><td>${r.directManager}</td><td>${r.hrbp}</td><td>${r.currentStage}</td>
+          <td><span class="status-tag ${st[r.status]||'progress'}">${r.status}</span></td>
+          <td>${r.createTime || '—'}</td>
+          <td><button class="btn-outline" onclick="editRecord('${r.id}')">✏️</button> <button class="btn-outline" onclick="openDeleteModal('${r.id}')">🗑️</button></td></tr>`;
+      });
+      html += '</tbody></table>';
+      if (rows.length > 12) html += `<div style="padding:8px;text-align:center;color:var(--grey-3);font-size:12px;">共 ${rows.length} 条，仅展示前12条</div>`;
+      el.innerHTML = html;
+    }
+
+    function renderRiskTable(rows) {
+      const el = document.getElementById('riskTable');
+      el.style.display = '';
+      document.getElementById('flowTable').style.display = 'none';
+      document.getElementById('stageTable').style.display = 'none';
+      const risks = rows.filter(r => r.status === '延期' || r.status === '不予转正' || r.status === '已离职');
+      if (!risks.length) { el.innerHTML = '<div class="empty-state">✅ 当前无风险记录</div>'; return; }
+      let html = `<table><thead><tr><th>员工</th><th>类型</th><th>风险状态</th><th>处理人</th><th>到期日</th><th>备注</th></tr></thead><tbody>`;
+      risks.forEach(r => {
+        const st = { '延期':'delay','不予转正':'reject','已离职':'reject' };
+        html += `<tr><td>${r.employeeName}</td><td>${r.employeeType}</td><td><span class="status-tag ${st[r.status]||'delay'}">${r.status}</span></td><td>${r.hrbp}</td><td>${r.endDate}</td><td>${r.remark}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+      
+      // Also update KPI detail modal content
+      if (risks.length > 0) {
+        const modalBody = document.getElementById('kpiModalBody');
+        if (modalBody) {
+          let detailHtml = `<div style="margin-bottom:12px"><strong>当前风险记录</strong> — ${risks.length}条</div><table style="width:100%"><thead><tr><th>员工</th><th>状态</th><th>处理人</th><th>到期日</th></tr></thead><tbody>`;
+          risks.forEach(r => {
+            detailHtml += `<tr><td>${r.employeeName}</td><td>${r.status}</td><td>${r.hrbp}</td><td>${r.endDate}</td></tr>`;
+          });
+          detailHtml += '</tbody></table>';
+          modalBody.innerHTML = detailHtml;
         }
       }
     }
-  });
-}
 
-// ============= MODAL =============
-function openAddModal(){
-  document.getElementById('modalTitle').textContent='新增流程';
-  document.getElementById('editId').value='';
-  document.getElementById('flowForm').reset();
-  document.getElementById('f_creator').value='王哲颢';
-  document.getElementById('f_stage').value='待启动';
-  document.getElementById('modalOverlay').classList.add('active');
-}
+    function renderStageTable(rows) {
+      const el = document.getElementById('stageTable');
+      el.style.display = '';
+      document.getElementById('flowTable').style.display = 'none';
+      document.getElementById('riskTable').style.display = 'none';
+      const stages = {};
+      rows.forEach(r => {
+        const key = r.currentStage + '|' + r.hrbp;
+        if (!stages[key]) stages[key] = { stage: r.currentStage, handler: r.hrbp, count: 0, names: [] };
+        stages[key].count++;
+        stages[key].names.push(r.employeeName);
+      });
+      const stageArr = Object.values(stages);
+      if (!stageArr.length) { el.innerHTML = '<div class="empty-state">暂无环节数据</div>'; return; }
+      let html = `<table><thead><tr><th>环节</th><th>处理人</th><th>人数</th><th>涉及员工</th></tr></thead><tbody>`;
+      stageArr.forEach(s => {
+        html += `<tr><td>${s.stage}</td><td>${s.handler}</td><td>${s.count}</td><td>${s.names.join(', ')}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      el.innerHTML = html;
+    }
 
-function openEditModal(id){
-  let data=getAllData();
-  let item=data.find(d=>d.id===id);
-  if(!item)return;
-  document.getElementById('modalTitle').textContent='编辑流程';
-  document.getElementById('editId').value=id;
-  document.getElementById('f_title').value=item.title||'';
-  document.getElementById('f_flowType').value=item.flowType||'雇主侧申报';
-  document.getElementById('f_stage').value=item.stage||'待启动';
-  document.getElementById('f_priority').value=item.priority||'中';
-  document.getElementById('f_country').value=item.country||'';
-  document.getElementById('f_company').value=item.companyName||'';
-  document.getElementById('f_employee').value=item.employeeName||'';
-  document.getElementById('f_handler').value=item.handler||'';
-  document.getElementById('f_creator').value=item.creator||'';
-  document.getElementById('f_supplier').value=item.supplier||'';
-  document.getElementById('f_deadline').value=item.deadline||'';
-  document.getElementById('f_completeTime').value=item.completeTime||'';
-  document.getElementById('f_description').value=item.description||'';
-  document.getElementById('modalOverlay').classList.add('active');
-}
+    // ============== FILTERS ==============
+    function renderAll() {
+      filteredRecords = [...records];
+      currentMetricRows = [...filteredRecords];
+      currentMetrics = computeKpiMetrics(currentMetricRows);
+      renderKpiCards(currentMetrics);
+      if (activeTab === 'flow') renderFlowTable(filteredRecords);
+      else if (activeTab === 'risk') renderRiskTable(filteredRecords);
+      else renderStageTable(filteredRecords);
+    }
 
-function closeModal(){
-  document.getElementById('modalOverlay').classList.remove('active');
-}
+    function applyFilters() {
+      const status = document.getElementById('globalStatusFilter').value;
+      const type = document.getElementById('globalTypeFilter').value;
+      const search = document.getElementById('globalSearch').value.toLowerCase();
+      let filtered = [...records];
+      if (status) filtered = filtered.filter(r => r.status === status);
+      if (type) filtered = filtered.filter(r => r.employeeType === type);
+      if (search) filtered = filtered.filter(r => r.employeeName.toLowerCase().includes(search));
+      filteredRecords = filtered;
+      currentMetricRows = [...filteredRecords];
+      currentMetrics = computeKpiMetrics(currentMetricRows);
+      renderKpiCards(currentMetrics);
+      
+      if (activeTab === 'flow') renderFlowTable(filtered);
+      else if (activeTab === 'risk') renderRiskTable(filtered);
+      else renderStageTable(filtered);
+    }
 
-function saveFlow(e){
-  e.preventDefault();
-  let data=getAllData();
-  let editId=document.getElementById('editId').value;
-  let now=new Date().toISOString().split('T')[0];
-  let obj={
-    title:document.getElementById('f_title').value.trim(),
-    flowType:document.getElementById('f_flowType').value,
-    stage:document.getElementById('f_stage').value,
-    priority:document.getElementById('f_priority').value,
-    country:document.getElementById('f_country').value.trim(),
-    companyName:document.getElementById('f_company').value.trim(),
-    employeeName:document.getElementById('f_employee').value.trim(),
-    handler:document.getElementById('f_handler').value.trim(),
-    creator:document.getElementById('f_creator').value.trim(),
-    supplier:document.getElementById('f_supplier').value.trim(),
-    deadline:document.getElementById('f_deadline').value,
-    completeTime:document.getElementById('f_completeTime').value,
-    description:document.getElementById('f_description').value.trim()
-  };
-  if(!obj.title)return;
-  if(editId){
-    let idx=data.findIndex(d=>d.id===editId);
-    if(idx>=0){Object.assign(data[idx],obj)}
-  }else{
-    obj.id=genId();
-    obj.createTime=now;
-    data.push(obj);
-  }
-  saveData(data);
-  closeModal();
-  renderAll();
-}
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+      if (tab === 'flow') renderFlowTable(filteredRecords.length ? filteredRecords : records);
+      else if (tab === 'risk') renderRiskTable(filteredRecords.length ? filteredRecords : records);
+      else renderStageTable(filteredRecords.length ? filteredRecords : records);
+    }
 
-// ============= DELETE =============
-let deleteId=null;
-function showDeleteConfirm(id){
-  deleteId=id;
-  let data=getAllData();
-  let item=data.find(d=>d.id===id);
-  document.getElementById('confirmText').textContent='确定要删除「'+(item?escHtml(item.title):'此记录')+'」吗？此操作不可恢复。';
-  document.getElementById('confirmOverlay').classList.add('active');
-}
-function closeConfirm(){
-  deleteId=null;
-  document.getElementById('confirmOverlay').classList.remove('active');
-}
-function confirmDeleteFlow(){
-  if(!deleteId){closeConfirm();return}
-  let data=getAllData().filter(d=>d.id!==deleteId);
-  saveData(data);
-  deleteId=null;
-  closeConfirm();
-  renderAll();
-}
+    // ============== CRUD ==============
+    function openAddModal() {
+      editTargetId = null;
+      document.getElementById('modalTitle').textContent = '新增转正流程';
+      ['fEmployeeName','fEmployeeId','fDepartment','fRegion','fDirectManager','fIndirectManager','fHrbp','fRemark'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      ['fEmployeeType','fStage','fStatus'].forEach(id => {
+        document.getElementById(id).selectedIndex = 0;
+      });
+      document.getElementById('fStartDate').value = '';
+      document.getElementById('fEndDate').value = '';
+      document.getElementById('addModal').classList.add('open');
+    }
 
-// ============= FILTER EVENTS =============
-document.getElementById('filterType').addEventListener('change',renderAll);
-document.getElementById('filterStage').addEventListener('change',renderAll);
-document.getElementById('filterPriority').addEventListener('change',renderAll);
-document.getElementById('filterSearch').addEventListener('input',renderAll);
+    function editRecord(id) {
+      const r = records.find(x => x.id === id);
+      if (!r) return;
+      editTargetId = id;
+      document.getElementById('modalTitle').textContent = '编辑转正流程';
+      document.getElementById('fEmployeeName').value = r.employeeName;
+      document.getElementById('fEmployeeId').value = r.employeeId;
+      document.getElementById('fEmployeeType').value = r.employeeType;
+      document.getElementById('fDepartment').value = r.department;
+      document.getElementById('fRegion').value = r.region;
+      document.getElementById('fDirectManager').value = r.directManager;
+      document.getElementById('fIndirectManager').value = r.indirectManager;
+      document.getElementById('fHrbp').value = r.hrbp;
+      document.getElementById('fStartDate').value = r.startDate;
+      document.getElementById('fEndDate').value = r.endDate;
+      document.getElementById('fStage').value = r.currentStage;
+      document.getElementById('fStatus').value = r.status;
+      document.getElementById('fRemark').value = r.remark;
+      document.getElementById('addModal').classList.add('open');
+    }
 
-// Modal click outside to close
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
-document.getElementById('confirmOverlay').addEventListener('click',function(e){if(e.target===this)closeConfirm()});
+    function saveRecord() {
+      const name = document.getElementById('fEmployeeName').value.trim();
+      if (!name) { alert('请填写员工姓名'); return; }
+      const rec = {
+        id: editTargetId || 'R' + Date.now().toString(36),
+        employeeName: name,
+        employeeId: document.getElementById('fEmployeeId').value,
+        employeeType: document.getElementById('fEmployeeType').value,
+        department: document.getElementById('fDepartment').value,
+        region: document.getElementById('fRegion').value,
+        directManager: document.getElementById('fDirectManager').value,
+        indirectManager: document.getElementById('fIndirectManager').value,
+        hrbp: document.getElementById('fHrbp').value,
+        startDate: document.getElementById('fStartDate').value,
+        endDate: document.getElementById('fEndDate').value,
+        currentStage: document.getElementById('fStage').value,
+        status: document.getElementById('fStatus').value,
+        createTime: new Date().toISOString().slice(0,10),
+        completeTime: '',
+        remark: document.getElementById('fRemark').value,
+      };
+      if (editTargetId) {
+        const idx = records.findIndex(x => x.id === editTargetId);
+        if (idx >= 0) { records[idx] = { ...records[idx], ...rec, id: editTargetId }; }
+      } else {
+        records.unshift(rec);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      closeAddModal();
+      applyFilters();
+    }
 
-// ============= UTILITY =============
-function escHtml(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+    function openDeleteModal(id) {
+      deleteTargetId = id;
+      const r = records.find(x => x.id === id);
+      document.getElementById('deleteMsg').textContent = `确定要删除 "${r?.employeeName}" 的转正记录吗？`;
+      document.getElementById('deleteModal').classList.add('open');
+    }
 
-// ============= INIT =============
-renderAll();
-</script>
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('open');
+      deleteTargetId = null;
+    }
+
+    function confirmDelete() {
+      if (deleteTargetId) {
+        records = records.filter(x => x.id !== deleteTargetId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+        closeDeleteModal();
+        applyFilters();
+      }
+    }
+
+    function closeAddModal() {
+      document.getElementById('addModal').classList.remove('open');
+      editTargetId = null;
+    }
+
+    function closeKpiDetailModal() {
+      document.getElementById('kpiDetailModal').classList.remove('open');
+    }
+
+    function openKpiDetail(key) {
+      const modal = document.getElementById('kpiDetailModal');
+      const title = document.getElementById('kpiModalTitle');
+      const body = document.getElementById('kpiModalBody');
+      const labels = {closureRate:'转正风险闭环及时率',avgProcessDays:'平均流程耗时',activeCount:'在办员工',onTimeRate:'按期转正率',delayRate:'延期率',rejectRate:'不予转正率',earlyRate:'提前转正占比',onlineRate:'线上化率',topStageCount:'TOP环节人数',topStage:'最卡点环节'};
+      title.textContent = `${labels[key] || key} · 明细`;
+
+      const sourceRows = currentMetricRows.length ? currentMetricRows : (filteredRecords.length ? filteredRecords : records);
+      const metricSnapshot = currentMetrics || computeKpiMetrics(sourceRows);
+      const detailRows = getMetricDetailRows(key, sourceRows, metricSnapshot);
+
+      let html = '';
+      if (detailRows.length > 0) {
+        html = `<table style="width:100%"><thead><tr><th>员工</th><th>部门</th><th>状态</th><th>环节</th></tr></thead><tbody>`;
+        detailRows.slice(0,10).forEach(r => {
+          html += `<tr><td>${r.employeeName}</td><td>${r.department}</td><td>${r.status}</td><td>${r.currentStage}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        html += `<div style="margin-top:8px;font-size:11px;color:var(--grey-3)">☝ 共 ${detailRows.length} 条匹配明细，数据与图表同源（流程明细表聚合）</div>`;
+      } else {
+        html = `<div class="empty-state">暂无匹配明细数据</div>`;
+      }
+      body.innerHTML = html;
+      modal.classList.add('open');
+    }
+
+    // ============== INIT ==============
+    window.onload = function() {
+      initData();
+      // Set default filters
+      applyFilters();
+      // Add mini chart rendering for some cards
+    };
+  </script>
 </body>
 </html>
